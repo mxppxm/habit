@@ -1,7 +1,17 @@
 import React, { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useHabitStore } from "../stores/useHabitStore";
-import { Plus, X, Edit2, Trash2, Clock, ChevronDown } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import {
+  Plus,
+  X,
+  Edit2,
+  Trash2,
+  Clock,
+  ChevronDown,
+  Tag,
+  Info,
+} from "lucide-react";
 
 // 自定义时间选择器组件
 const TimePicker: React.FC<{
@@ -108,7 +118,96 @@ const TimePicker: React.FC<{
   );
 };
 
+// 自定义分类选择器组件
+const CategorySelector: React.FC<{
+  value: string;
+  onChange: (value: string) => void;
+  categories: { id: string; name: string }[];
+  placeholder?: string;
+}> = ({ value, onChange, categories, placeholder = "请选择分类" }) => {
+  const [isOpen, setIsOpen] = useState(false);
+
+  const selectedCategory = categories.find((cat) => cat.id === value);
+
+  // 关闭下拉菜单当点击外部时
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest(".category-selector-container")) {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isOpen]);
+
+  return (
+    <div className="relative category-selector-container">
+      <button
+        type="button"
+        onClick={() => setIsOpen(!isOpen)}
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 text-left flex items-center justify-between bg-white"
+      >
+        <div className="flex items-center space-x-2">
+          <Tag className="w-5 h-5 text-gray-400" />
+          <span
+            className={selectedCategory ? "text-gray-900" : "text-gray-400"}
+          >
+            {selectedCategory ? selectedCategory.name : placeholder}
+          </span>
+        </div>
+        <ChevronDown
+          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
+            isOpen ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {isOpen && (
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-[60] max-h-60 overflow-hidden">
+          {categories.length > 0 ? (
+            <div className="py-2">
+              {categories.map((category) => (
+                <button
+                  key={category.id}
+                  onClick={() => {
+                    onChange(category.id);
+                    setIsOpen(false);
+                  }}
+                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 ${
+                    category.id === value
+                      ? "bg-[#FF5A5F] text-white hover:bg-[#FF5A5F]"
+                      : ""
+                  }`}
+                >
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      category.id === value ? "bg-white" : "bg-[#FF5A5F]"
+                    }`}
+                  ></div>
+                  <span className="font-medium">{category.name}</span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div className="py-8 text-center text-gray-500">
+              <Tag className="w-8 h-8 mx-auto mb-2 text-gray-300" />
+              <p className="text-sm">暂无分类</p>
+              <p className="text-xs text-gray-400">请先创建分类</p>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+};
+
 const Management: React.FC = () => {
+  const navigate = useNavigate();
   const { categories, addCategory, updateCategory, deleteCategory } =
     useHabitStore();
   const { habits, addHabit, updateHabit, deleteHabit } = useHabitStore();
@@ -167,7 +266,8 @@ const Management: React.FC = () => {
   const openAddHabitDialog = () => {
     setEditHabit(null);
     setHabitName("");
-    setSelectedCategory("");
+    // 默认选择第一个分类
+    setSelectedCategory(categories.length > 0 ? categories[0].id : "");
     setReminderTime("");
     setHabitDialogOpen(true);
   };
@@ -332,6 +432,13 @@ const Management: React.FC = () => {
                   </div>
                   <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
+                      onClick={() => navigate(`/habit/${habit.id}`)}
+                      className="flex items-center space-x-1 px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                    >
+                      <Info className="w-4 h-4" />
+                      <span className="text-sm">详情</span>
+                    </button>
+                    <button
                       onClick={() => openEditHabitDialog(habit)}
                       className="flex items-center space-x-1 px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
                     >
@@ -396,18 +503,12 @@ const Management: React.FC = () => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     选择分类
                   </label>
-                  <select
+                  <CategorySelector
                     value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 bg-white"
-                  >
-                    <option value="">请选择分类</option>
-                    {categories.map((category) => (
-                      <option key={category.id} value={category.id}>
-                        {category.name}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={setSelectedCategory}
+                    categories={categories}
+                    placeholder="请选择分类"
+                  />
                   {categories.length === 0 && (
                     <p className="text-sm text-gray-500 mt-1">
                       请先创建分类再添加项目

@@ -15,10 +15,12 @@ interface HabitStore {
   categories: Category[];
   habits: Habit[];
   habitLogs: HabitLog[];
+  userName: string;
   loading: boolean;
   error: string | null;
   init: () => Promise<void>;
   addCategory: (name: string) => Promise<void>;
+  insertCategory: (category: Category) => Promise<void>;
   updateCategory: (id: string, name: string) => Promise<void>;
   deleteCategory: (id: string) => Promise<void>;
   addHabit: (
@@ -26,6 +28,7 @@ interface HabitStore {
     name: string,
     reminderTime?: string
   ) => Promise<void>;
+  insertHabit: (habit: Habit) => Promise<void>;
   updateHabit: (
     id: string,
     name: string,
@@ -33,6 +36,9 @@ interface HabitStore {
   ) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   checkinHabit: (habitId: string, note: string) => Promise<void>;
+  deleteHabitLog: (logId: string) => Promise<void>;
+  updateHabitLog: (logId: string, note: string) => Promise<void>;
+  updateUserName: (name: string) => void;
   clearAll: () => Promise<void>;
 }
 
@@ -42,6 +48,7 @@ export const useHabitStore = create<HabitStore>()(
       categories: [],
       habits: [],
       habitLogs: [],
+      userName: "亲爱的朋友",
       loading: false,
       error: null,
       init: async () => {
@@ -61,6 +68,14 @@ export const useHabitStore = create<HabitStore>()(
           const newCategory: Category = { id: uuidv4(), name };
           await addData("categories", newCategory);
           set((state) => ({ categories: [...state.categories, newCategory] }));
+        } catch (error: any) {
+          set({ error: error.message });
+        }
+      },
+      insertCategory: async (category: Category) => {
+        try {
+          await addData("categories", category);
+          set((state) => ({ categories: [...state.categories, category] }));
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -101,6 +116,14 @@ export const useHabitStore = create<HabitStore>()(
           set({ error: error.message });
         }
       },
+      insertHabit: async (habit: Habit) => {
+        try {
+          await addData("habits", habit);
+          set((state) => ({ habits: [...state.habits, habit] }));
+        } catch (error: any) {
+          set({ error: error.message });
+        }
+      },
       updateHabit: async (id, name, reminderTime) => {
         try {
           await putData("habits", { id, name, reminderTime });
@@ -137,10 +160,46 @@ export const useHabitStore = create<HabitStore>()(
           set({ error: error.message });
         }
       },
+      deleteHabitLog: async (logId) => {
+        try {
+          await deleteData("habitLogs", logId);
+          set((state) => ({
+            habitLogs: state.habitLogs.filter((log) => log.id !== logId),
+          }));
+        } catch (error: any) {
+          set({ error: error.message });
+        }
+      },
+      updateHabitLog: async (logId, note) => {
+        try {
+          const existingLog = useHabitStore
+            .getState()
+            .habitLogs.find((log) => log.id === logId);
+          if (existingLog) {
+            const updatedLog = { ...existingLog, note };
+            await putData("habitLogs", updatedLog);
+            set((state) => ({
+              habitLogs: state.habitLogs.map((log) =>
+                log.id === logId ? updatedLog : log
+              ),
+            }));
+          }
+        } catch (error: any) {
+          set({ error: error.message });
+        }
+      },
+      updateUserName: (name) => {
+        set({ userName: name });
+      },
       clearAll: async () => {
         try {
           await clearAllData();
-          set({ categories: [], habits: [], habitLogs: [] });
+          set({
+            categories: [],
+            habits: [],
+            habitLogs: [],
+            userName: "亲爱的朋友", // 重置用户名为默认值
+          });
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -149,6 +208,9 @@ export const useHabitStore = create<HabitStore>()(
     {
       name: "habit-store",
       getStorage: () => localStorage,
+      partialize: (state) => ({
+        userName: state.userName,
+      }),
     }
   )
 );
