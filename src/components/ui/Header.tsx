@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import dayjs from "dayjs";
-import { CheckCircle, Edit3, RefreshCw } from "lucide-react";
+import { Target, Edit3, RefreshCw } from "lucide-react";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import { useNavigate } from "react-router-dom";
 import { useHabitStore } from "../../stores/useHabitStore";
 import { getRandomQuote, getRefreshQuote, Quote } from "../../utils/quotes";
 
@@ -18,6 +19,7 @@ export const Header: React.FC = () => {
   const [tempUserName, setTempUserName] = useState(userName);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [isRefreshingQuote, setIsRefreshingQuote] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     // 更新时间的函数
@@ -90,34 +92,50 @@ export const Header: React.FC = () => {
     <div className="w-full bg-white py-4 px-6 shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
-          {/* 左侧：Logo和用户信息 */}
-          <div className="flex items-center space-x-2 flex-shrink-0">
-            <CheckCircle className="w-8 h-8 text-[#FF5A5F]" />
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-800">
-                习惯打卡追踪器
-              </h1>
-              <div className="flex items-center space-x-2 mt-1">
-                <span className="text-sm text-gray-500">{getGreeting()}，</span>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={tempUserName}
-                    onChange={(e) => setTempUserName(e.target.value)}
-                    onBlur={handleSaveUserName}
-                    onKeyDown={handleKeyPress}
-                    className="text-sm text-gray-700 font-medium bg-transparent border-b border-gray-400 focus:outline-none min-w-20 max-w-32"
-                    autoFocus
-                  />
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="group flex items-center space-x-1 text-sm text-gray-700 font-medium hover:text-gray-900 transition-colors"
-                  >
-                    <span>{userName}</span>
-                    <Edit3 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                  </button>
-                )}
+          <div className="flex flex-col items-end">
+            {/* 左侧：Logo和用户信息 */}
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <button
+                onClick={() => navigate("/")}
+                className="flex items-center space-x-2 group"
+                title="回到首页"
+              >
+                <div className="w-10 h-10 bg-gradient-to-br from-[#FF5A5F] to-[#FF7E82] rounded-xl flex items-center justify-center group-hover:shadow-lg transition-shadow duration-200">
+                  <Target className="w-6 h-6 text-white" />
+                </div>
+                <h1 className="text-2xl font-semibold text-[#FF5A5F]">
+                  Habit Tracker
+                </h1>
+              </button>
+            </div>
+
+            {/* 用户信息 */}
+            <div className="flex items-center space-x-2 flex-shrink-0">
+              <div>
+                <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-sm text-gray-500">
+                    {getGreeting()}，
+                  </span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={tempUserName}
+                      onChange={(e) => setTempUserName(e.target.value)}
+                      onBlur={handleSaveUserName}
+                      onKeyDown={handleKeyPress}
+                      className="text-sm text-gray-700 font-medium bg-transparent border-b border-gray-400 focus:outline-none min-w-20 max-w-32"
+                      autoFocus
+                    />
+                  ) : (
+                    <button
+                      onClick={() => setIsEditing(true)}
+                      className="group flex items-center space-x-1 text-sm text-gray-700 font-medium hover:text-gray-900 transition-colors"
+                    >
+                      <span>{userName}</span>
+                      <Edit3 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

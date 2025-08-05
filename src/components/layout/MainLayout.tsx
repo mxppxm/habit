@@ -1,6 +1,6 @@
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { Header } from '../ui/Header';
-import { Home, Settings, BarChart3, FolderOpen } from 'lucide-react';
+import { Home, Settings, BarChart3, FolderOpen, Info } from 'lucide-react';
 
 /**
  * Airbnb风格主布局组件
@@ -15,6 +15,7 @@ export const MainLayout: React.FC = () => {
     { path: '/management', label: '管理', icon: FolderOpen },
     { path: '/statistics', label: '统计', icon: BarChart3 },
     { path: '/settings', label: '设置', icon: Settings },
+    { path: '/about', label: '关于', icon: Info },
   ];
 
   return (

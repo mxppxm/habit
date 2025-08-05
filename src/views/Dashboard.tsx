@@ -21,6 +21,7 @@ const Dashboard: React.FC = () => {
   } = useHabitStore();
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
   const [note, setNote] = useState("");
+
   const navigate = useNavigate();
 
   // 使用通知提醒 Hook
