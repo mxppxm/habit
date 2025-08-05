@@ -7,7 +7,6 @@ import {
   Upload,
   Trash2,
   FileText,
-  X,
   AlertTriangle,
   Check,
   Loader2,
@@ -96,12 +95,9 @@ const Settings: React.FC = () => {
       const data = JSON.parse(exportData);
       const {
         categories,
-        habits,
         habitLogs,
-        addCategory,
         insertCategory,
         updateCategory,
-        addHabit,
         insertHabit,
         updateHabit,
         checkinHabit,
