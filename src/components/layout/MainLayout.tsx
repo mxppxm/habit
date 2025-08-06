@@ -1,6 +1,6 @@
-import { Link, Outlet, useLocation } from 'react-router-dom';
-import { Header } from '../ui/Header';
-import { Home, Settings, BarChart3, FolderOpen, Info } from 'lucide-react';
+import { Link, Outlet, useLocation } from "react-router-dom";
+import { Header } from "../ui/Header";
+import { Home, Settings, BarChart3, FolderOpen, Info } from "lucide-react";
 
 /**
  * Airbnb风格主布局组件
@@ -11,51 +11,51 @@ export const MainLayout: React.FC = () => {
 
   // 导航菜单项
   const navItems = [
-    { path: '/', label: '首页', icon: Home },
-    { path: '/management', label: '管理', icon: FolderOpen },
-    { path: '/statistics', label: '统计', icon: BarChart3 },
-    { path: '/settings', label: '设置', icon: Settings },
-    { path: '/about', label: '关于', icon: Info },
+    { path: "/", label: "首页", icon: Home },
+    { path: "/management", label: "管理", icon: FolderOpen },
+    { path: "/statistics", label: "统计", icon: BarChart3 },
+    { path: "/settings", label: "设置", icon: Settings },
+    { path: "/about", label: "关于", icon: Info },
   ];
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
       {/* 顶部时间展示 */}
       <Header />
-      
+
       {/* 导航栏 */}
       <nav className="bg-white sticky top-0 z-10 border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex justify-center space-x-8">
+        <div className="max-w-7xl mx-auto px-2 sm:px-4">
+          <div className="flex justify-center space-x-2 sm:space-x-8 overflow-x-auto scrollbar-hide">
             {navItems.map((item) => {
               const Icon = item.icon;
               const isActive = location.pathname === item.path;
-              
+
               return (
                 <Link
                   key={item.path}
                   to={item.path}
                   className={`
-                    relative flex items-center space-x-2 px-4 py-4 transition-all duration-300
-                    ${isActive
-                      ? 'text-[#FF5A5F]'
-                      : 'text-gray-500 hover:text-gray-800'
+                    relative flex items-center space-x-1 sm:space-x-2 px-2 sm:px-4 py-3 sm:py-4 transition-all duration-300 flex-shrink-0
+                    ${
+                      isActive
+                        ? "text-[#FF5A5F]"
+                        : "text-gray-500 hover:text-gray-800"
                     }
                   `}
                 >
                   {/* 底部边框 */}
-                  <div 
+                  <div
                     className={`
                       absolute bottom-0 left-0 right-0 h-0.5 transition-all duration-300
-                      ${isActive 
-                        ? 'bg-[#FF5A5F]' 
-                        : 'bg-transparent'
-                      }
+                      ${isActive ? "bg-[#FF5A5F]" : "bg-transparent"}
                     `}
                   />
-                  
-                  <Icon className="w-5 h-5 relative z-10" />
-                  <span className="font-medium relative z-10">{item.label}</span>
+
+                  <Icon className="w-4 h-4 sm:w-5 sm:h-5 relative z-10" />
+                  <span className="text-sm sm:text-base font-medium relative z-10">
+                    {item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -64,7 +64,7 @@ export const MainLayout: React.FC = () => {
       </nav>
 
       {/* 内容区域 */}
-      <main className="max-w-7xl mx-auto px-4 py-8">
+      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Outlet />
       </main>
     </div>

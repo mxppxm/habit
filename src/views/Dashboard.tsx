@@ -121,18 +121,18 @@ const Dashboard: React.FC = () => {
           if (categoryHabits.length === 0) return null;
 
           return (
-            <div key={category.id} className="card p-8">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-4 h-4 rounded-full bg-[#FF5A5F]"></div>
-                <h2 className="text-2xl font-semibold text-gray-800">
+            <div key={category.id} className="card p-4 sm:p-8">
+              <div className="flex items-center space-x-3 mb-4 sm:mb-6">
+                <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#FF5A5F]"></div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
                   {category.name}
                 </h2>
                 <div className="flex-1 h-px bg-gray-200"></div>
-                <span className="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">
+                <span className="text-xs sm:text-sm text-gray-500 bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
                   {categoryHabits.length} 个习惯
                 </span>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {categoryHabits.map((habit) => {
                   const isChecked = isCheckedToday(habit.id);
                   const checkinTime = getTodayCheckinTime(habit.id);
@@ -153,7 +153,7 @@ const Dashboard: React.FC = () => {
                       <Dialog.Trigger asChild>
                         <div
                           className={`
-                            group p-6 rounded-2xl cursor-pointer transition-all duration-300 transform hover:scale-105
+                            group p-4 sm:p-6 rounded-2xl cursor-pointer transition-all duration-300 transform hover:scale-105
                             ${
                               isChecked
                                 ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-lg"
@@ -163,14 +163,14 @@ const Dashboard: React.FC = () => {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div
-                              className={`w-12 h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+                              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
                                 isChecked
                                   ? "bg-green-500 shadow-lg"
                                   : "bg-gray-100 group-hover:bg-[#FF5A5F]"
                               }`}
                             >
                               <span
-                                className={`text-xl transition-all duration-200 ${
+                                className={`text-lg sm:text-xl transition-all duration-200 ${
                                   isChecked
                                     ? "text-white"
                                     : "group-hover:text-white"
@@ -189,7 +189,7 @@ const Dashboard: React.FC = () => {
                           </div>
                           <div className="space-y-2">
                             <div className="flex items-center justify-between">
-                              <h3 className="font-semibold text-gray-800 text-lg leading-tight flex-1">
+                              <h3 className="font-semibold text-gray-800 text-base sm:text-lg leading-tight flex-1">
                                 {habit.name}
                               </h3>
                               <button
@@ -234,9 +234,9 @@ const Dashboard: React.FC = () => {
 
                       <Dialog.Portal>
                         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-                        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl z-50">
+                        <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md mx-4 shadow-2xl z-50">
                           <div className="flex items-center justify-between mb-6">
-                            <Dialog.Title className="text-2xl font-semibold text-gray-800">
+                            <Dialog.Title className="text-xl sm:text-2xl font-semibold text-gray-800 leading-tight">
                               {isChecked
                                 ? `已打卡: ${habit.name}`
                                 : `打卡: ${habit.name}`}
@@ -374,15 +374,15 @@ const Dashboard: React.FC = () => {
           );
         })
       ) : (
-        <div className="text-center py-16">
-          <div className="max-w-md mx-auto">
-            <div className="w-24 h-24 mx-auto mb-6 bg-gradient-to-br from-[#FF5A5F] to-pink-400 rounded-full flex items-center justify-center shadow-lg">
-              <Target className="w-12 h-12 text-white" />
+        <div className="text-center py-12 sm:py-16">
+          <div className="max-w-md mx-auto px-4">
+            <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-[#FF5A5F] to-pink-400 rounded-full flex items-center justify-center shadow-lg">
+              <Target className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
             </div>
-            <h3 className="text-2xl font-semibold text-gray-800 mb-3">
+            <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
               开始你的习惯之旅
             </h3>
-            <p className="text-gray-500 text-lg mb-6 leading-relaxed">
+            <p className="text-gray-500 text-base sm:text-lg mb-6 leading-relaxed">
               还没有任何习惯项目，创建你的第一个习惯开始打卡吧！
             </p>
             <div className="space-y-3">

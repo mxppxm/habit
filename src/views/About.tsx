@@ -73,28 +73,28 @@ const About: React.FC = () => {
   ];
 
   return (
-    <div className="max-w-4xl mx-auto space-y-12">
+    <div className="max-w-4xl mx-auto space-y-8 sm:space-y-12 px-4">
       {/* 主标题部分 */}
-      <div className="text-center space-y-6">
-        <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-[#FF5A5F] to-[#FF7E82] rounded-3xl shadow-lg">
-          <Target className="w-10 h-10 text-white" />
+      <div className="text-center space-y-4 sm:space-y-6">
+        <div className="inline-flex items-center justify-center w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-br from-[#FF5A5F] to-[#FF7E82] rounded-3xl shadow-lg">
+          <Target className="w-8 h-8 sm:w-10 sm:h-10 text-white" />
         </div>
         <div>
-          <h1 className="text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4">
             Habit Tracker
           </h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
+          <p className="text-base sm:text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed">
             一个简单易用的习惯追踪工具，帮助您建立并维持良好的生活习惯，所有数据安全保存在您的设备上
           </p>
         </div>
       </div>
 
       {/* 统计数据 */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6">
         {stats.map((stat, index) => (
           <div
             key={index}
-            className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
+            className="bg-white rounded-2xl p-4 sm:p-6 shadow-md hover:shadow-lg transition-shadow duration-300"
           >
             <div className="flex items-center space-x-3 mb-2">
               <div className="text-[#FF5A5F]">{stat.icon}</div>

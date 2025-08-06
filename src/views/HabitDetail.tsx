@@ -198,18 +198,20 @@ const HabitDetail: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* 头部 */}
-      <div className="flex items-center space-x-4">
+      <div className="flex items-start space-x-3 sm:space-x-4">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+          className="p-2 rounded-full hover:bg-gray-100 transition-colors flex-shrink-0"
         >
-          <ArrowLeft className="w-6 h-6 text-gray-600" />
+          <ArrowLeft className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600" />
         </button>
-        <div className="flex-1">
-          <div className="flex items-center space-x-3">
-            <h1 className="text-3xl font-bold text-gray-800">{habit.name}</h1>
+        <div className="flex-1 min-w-0">
+          <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 leading-tight">
+              {habit.name}
+            </h1>
             {category && (
-              <span className="px-3 py-1 bg-[#FF5A5F] text-white text-sm rounded-full">
+              <span className="inline-block px-2 sm:px-3 py-1 bg-[#FF5A5F] text-white text-xs sm:text-sm rounded-full flex-shrink-0">
                 {category.name}
               </span>
             )}
@@ -217,8 +219,8 @@ const HabitDetail: React.FC = () => {
           <div className="flex items-center space-x-2 mt-1 text-gray-500">
             {habit.reminderTime && (
               <>
-                <Clock className="w-4 h-4" />
-                <span>提醒时间：{habit.reminderTime}</span>
+                <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                <span className="text-sm">提醒时间：{habit.reminderTime}</span>
               </>
             )}
           </div>
@@ -226,18 +228,20 @@ const HabitDetail: React.FC = () => {
       </div>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
         <button
           onClick={() => handleStatsClick("total")}
-          className="card p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
+          className="card p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
-              <Target className="w-6 h-6 text-blue-600" />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-2xl flex items-center justify-center">
+              <Target className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">总打卡天数</p>
-              <p className="text-2xl font-bold text-gray-800">{totalDays}</p>
+              <p className="text-xs sm:text-sm text-gray-500">总打卡天数</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-800">
+                {totalDays}
+              </p>
             </div>
           </div>
           <div className="mt-2 text-xs text-gray-400">点击查看日历</div>
@@ -245,15 +249,15 @@ const HabitDetail: React.FC = () => {
 
         <button
           onClick={() => handleStatsClick("streak")}
-          className="card p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
+          className="card p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-green-100 rounded-2xl flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-green-600" />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 rounded-2xl flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">连续天数</p>
-              <p className="text-2xl font-bold text-gray-800">
+              <p className="text-xs sm:text-sm text-gray-500">连续天数</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-800">
                 {currentStreak}
               </p>
             </div>
@@ -263,15 +267,15 @@ const HabitDetail: React.FC = () => {
 
         <button
           onClick={() => handleStatsClick("thisWeek")}
-          className="card p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
+          className="card p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
-              <Calendar className="w-6 h-6 text-purple-600" />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 rounded-2xl flex items-center justify-center">
+              <Calendar className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">本周打卡</p>
-              <p className="text-2xl font-bold text-gray-800">
+              <p className="text-xs sm:text-sm text-gray-500">本周打卡</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-800">
                 {thisWeekCount}
               </p>
             </div>
@@ -281,15 +285,15 @@ const HabitDetail: React.FC = () => {
 
         <button
           onClick={() => handleStatsClick("thisMonth")}
-          className="card p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
+          className="card p-4 sm:p-6 hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-105 text-left"
         >
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
-              <CheckCircle2 className="w-6 h-6 text-orange-600" />
+          <div className="flex items-center space-x-2 sm:space-x-3">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 rounded-2xl flex items-center justify-center">
+              <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-gray-500">本月打卡</p>
-              <p className="text-2xl font-bold text-gray-800">
+              <p className="text-xs sm:text-sm text-gray-500">本月打卡</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-800">
                 {thisMonthCount}
               </p>
             </div>
@@ -299,34 +303,42 @@ const HabitDetail: React.FC = () => {
       </div>
 
       {/* 打卡记录 */}
-      <div className="card p-8">
+      <div className="card p-4 sm:p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">打卡记录</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+            打卡记录
+          </h2>
           <button
             onClick={() => setShowAddDialog(true)}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
           >
             <Plus className="w-4 h-4" />
-            <span>新增打卡</span>
+            <span className="hidden sm:inline">新增打卡</span>
+            <span className="sm:hidden">新增</span>
           </button>
         </div>
 
         {sortedDates.length > 0 ? (
           <div className="space-y-4">
             {sortedDates.map((date) => (
-              <div key={date} className="border border-gray-200 rounded-xl p-6">
+              <div
+                key={date}
+                className="border border-gray-200 rounded-xl p-4 sm:p-6"
+              >
                 <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
                     <div className="w-3 h-3 bg-[#FF5A5F] rounded-full"></div>
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {dayjs(date).format("YYYY年MM月DD日")}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {dayjs(date).format("dddd")}
-                    </span>
+                    <div>
+                      <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                        {dayjs(date).format("MM月DD日")}
+                      </h3>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        {dayjs(date).format("dddd")}
+                      </span>
+                    </div>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {logsByDate[date].length} 次打卡
+                  <span className="text-xs sm:text-sm text-gray-500">
+                    {logsByDate[date].length} 次
                   </span>
                 </div>
 
@@ -336,9 +348,9 @@ const HabitDetail: React.FC = () => {
                     .map((log) => (
                       <div
                         key={log.id}
-                        className="group flex items-start space-x-4 p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className="group flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
                       >
-                        <div className="text-sm text-gray-500 min-w-16">
+                        <div className="text-xs sm:text-sm text-gray-500 min-w-12 sm:min-w-16">
                           {dayjs(log.timestamp).format("HH:mm")}
                         </div>
                         <div className="flex-1">
@@ -440,7 +452,7 @@ const HabitDetail: React.FC = () => {
       <Dialog.Root open={showAddDialog} onOpenChange={setShowAddDialog}>
         <Dialog.Portal>
           <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-          <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl z-50">
+          <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md mx-4 shadow-2xl z-50">
             <div className="flex items-center justify-between mb-6">
               <Dialog.Title className="text-2xl font-semibold text-gray-800">
                 新增打卡

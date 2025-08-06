@@ -34,10 +34,10 @@ const Statistics: React.FC = () => {
     .reverse();
 
   return (
-    <div className="space-y-8">
-      <div className="bg-white p-6 rounded shadow">
-        <h2 className="text-xl font-semibold mb-4">今日进度</h2>
-        <ResponsiveContainer width="100%" height={300}>
+    <div className="space-y-6 sm:space-y-8">
+      <div className="bg-white p-4 sm:p-6 rounded shadow">
+        <h2 className="text-lg sm:text-xl font-semibold mb-4">今日进度</h2>
+        <ResponsiveContainer width="100%" height={250}>
           <LineChart
             data={data}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}

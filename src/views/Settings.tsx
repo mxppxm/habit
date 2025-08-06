@@ -199,16 +199,20 @@ const Settings: React.FC = () => {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 sm:space-y-8">
       {/* 导出数据 */}
-      <div className="card p-8">
+      <div className="card p-6 sm:p-8">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
-            <Download className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+            <Download className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800">导出数据</h2>
-            <p className="text-gray-500">备份您的习惯数据到本地文件</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+              导出数据
+            </h2>
+            <p className="text-sm sm:text-base text-gray-500">
+              备份您的习惯数据到本地文件
+            </p>
           </div>
         </div>
         <button
@@ -221,14 +225,18 @@ const Settings: React.FC = () => {
       </div>
 
       {/* 导入数据 */}
-      <div className="card p-8">
+      <div className="card p-6 sm:p-8">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
-            <Upload className="w-6 h-6 text-white" />
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
+            <Upload className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </div>
           <div>
-            <h2 className="text-2xl font-semibold text-gray-800">导入数据</h2>
-            <p className="text-gray-500">从备份文件增量导入您的习惯数据</p>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+              导入数据
+            </h2>
+            <p className="text-sm sm:text-base text-gray-500">
+              从备份文件增量导入您的习惯数据
+            </p>
           </div>
         </div>
 

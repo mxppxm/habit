@@ -23,7 +23,19 @@ export const Header: React.FC = () => {
     "normal" | "warning" | "urgent"
   >("normal");
   const [targetTime, setTargetTime] = useState(dayjs().endOf("day").valueOf());
+  const [isMobile, setIsMobile] = useState(false);
   const navigate = useNavigate();
+
+  // 检测移动端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // 更新紧迫程度和目标时间
   useEffect(() => {
@@ -104,10 +116,10 @@ export const Header: React.FC = () => {
   };
 
   return (
-    <div className="w-full bg-white py-4 px-6 shadow-sm border-b border-gray-200">
+    <div className="w-full bg-white py-3 sm:py-4 px-4 sm:px-6 shadow-sm border-b border-gray-200">
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between">
-          <div className="flex flex-col items-end">
+          <div className="flex flex-col items-start sm:items-end">
             {/* 左侧：Logo和用户信息 */}
             <div className="flex items-center space-x-2 flex-shrink-0">
               <button
@@ -115,11 +127,12 @@ export const Header: React.FC = () => {
                 className="flex items-center space-x-2 group"
                 title="回到首页"
               >
-                <div className="w-10 h-10 bg-gradient-to-br from-[#FF5A5F] to-[#FF7E82] rounded-xl flex items-center justify-center group-hover:shadow-lg transition-shadow duration-200">
-                  <Target className="w-6 h-6 text-white" />
+                <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-[#FF5A5F] to-[#FF7E82] rounded-xl flex items-center justify-center group-hover:shadow-lg transition-shadow duration-200">
+                  <Target className="w-4 h-4 sm:w-6 sm:h-6 text-white" />
                 </div>
-                <h1 className="text-2xl font-semibold text-[#FF5A5F]">
-                  Habit Tracker
+                <h1 className="text-lg sm:text-2xl font-semibold text-[#FF5A5F]">
+                  <span className="hidden sm:inline">Habit Tracker</span>
+                  <span className="sm:hidden">习惯</span>
                 </h1>
               </button>
             </div>
@@ -128,7 +141,7 @@ export const Header: React.FC = () => {
             <div className="flex items-center space-x-2 flex-shrink-0">
               <div>
                 <div className="flex items-center space-x-2 mt-1">
-                  <span className="text-sm text-gray-500">
+                  <span className="text-xs sm:text-sm text-gray-500">
                     {getGreeting()}，
                   </span>
                   {isEditing ? (
@@ -138,16 +151,16 @@ export const Header: React.FC = () => {
                       onChange={(e) => setTempUserName(e.target.value)}
                       onBlur={handleSaveUserName}
                       onKeyDown={handleKeyPress}
-                      className="text-sm text-gray-700 font-medium bg-transparent border-b border-gray-400 focus:outline-none min-w-20 max-w-32"
+                      className="text-xs sm:text-sm text-gray-700 font-medium bg-transparent border-b border-gray-400 focus:outline-none min-w-16 sm:min-w-20 max-w-24 sm:max-w-32"
                       autoFocus
                     />
                   ) : (
                     <button
                       onClick={() => setIsEditing(true)}
-                      className="group flex items-center space-x-1 text-sm text-gray-700 font-medium hover:text-gray-900 transition-colors"
+                      className="group flex items-center space-x-1 text-xs sm:text-sm text-gray-700 font-medium hover:text-gray-900 transition-colors"
                     >
                       <span>{userName}</span>
-                      <Edit3 className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <Edit3 className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />
                     </button>
                   )}
                 </div>
@@ -216,9 +229,9 @@ export const Header: React.FC = () => {
                 showLabels={false}
                 showSeparators={true}
                 digitBlockStyle={{
-                  width: 40,
-                  height: 60,
-                  fontSize: 30,
+                  width: isMobile ? 28 : 40,
+                  height: isMobile ? 42 : 60,
+                  fontSize: isMobile ? 20 : 30,
                   fontWeight: "bold",
                 }}
                 className={`flip-clock-custom ${urgencyLevel}`}
@@ -232,7 +245,8 @@ export const Header: React.FC = () => {
                     : "text-green-600"
                 }`}
               >
-                今日剩余
+                <span className="hidden sm:inline">今日剩余</span>
+                <span className="sm:hidden">剩余</span>
               </span>
             </div>
           </div>

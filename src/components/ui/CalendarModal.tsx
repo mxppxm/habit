@@ -29,6 +29,7 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
   defaultMonth,
 }) => {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   // 将打卡记录转换为日期数组
   const checkedDates = useMemo(() => {
@@ -46,6 +47,17 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
       return acc;
     }, {} as Record<string, HabitLog[]>);
   }, [habitLogs]);
+
+  // 检测移动端
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   // 当弹窗打开时，检查今天是否有打卡记录，如果有就默认选中今天
   useEffect(() => {
@@ -94,52 +106,70 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
         <Dialog.Content
-          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50"
-          style={{ width: "1200px", height: "700px" }}
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl shadow-2xl z-50 w-full max-w-7xl mx-4 h-full max-h-[90vh]"
+          style={{
+            width: isMobile ? "calc(100vw - 2rem)" : "1200px",
+            height: isMobile ? "calc(100vh - 2rem)" : "700px",
+            maxWidth: isMobile ? "none" : "1200px",
+            maxHeight: isMobile ? "90vh" : "700px",
+          }}
         >
           {/* 头部 */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-100">
-            <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-br from-[#FF5A5F] to-[#FF6B7A] rounded-2xl flex items-center justify-center shadow-lg">
-                <CalendarIcon className="w-6 h-6 text-white" />
+          <div className="flex items-center justify-between p-4 sm:p-6 border-b border-gray-100">
+            <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-[#FF5A5F] to-[#FF6B7A] rounded-2xl flex items-center justify-center shadow-lg">
+                <CalendarIcon className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
               </div>
-              <div>
-                <Dialog.Title className="text-2xl font-bold text-gray-800">
+              <div className="min-w-0">
+                <Dialog.Title className="text-lg sm:text-2xl font-bold text-gray-800 truncate">
                   {title}
                 </Dialog.Title>
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-xs sm:text-sm text-gray-500 mt-1">
                   共 {checkedDates.length} 天打卡记录
                 </p>
               </div>
             </div>
             <Dialog.Close asChild>
-              <button className="p-3 rounded-2xl hover:bg-gray-100 transition-all duration-200 group">
-                <X className="w-6 h-6 text-gray-400 group-hover:text-gray-600" />
+              <button className="p-2 sm:p-3 rounded-2xl hover:bg-gray-100 transition-all duration-200 group flex-shrink-0">
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-gray-400 group-hover:text-gray-600" />
               </button>
             </Dialog.Close>
           </div>
 
-          <div className="flex px-6 pt-3 " style={{ height: "588px" }}>
+          <div
+            className={`flex ${
+              isMobile ? "flex-col" : "flex-row"
+            } px-3 sm:px-6 pt-3`}
+            style={{ height: isMobile ? "calc(100% - 90px)" : "588px" }}
+          >
             {/* 左侧日历 */}
-            <div className="flex-1">
+            <div className={`${isMobile ? "w-full mb-4" : "flex-1"}`}>
               <div className="mb-3">
-                <div className="flex items-center space-x-4 text-sm">
+                <div
+                  className={`flex ${
+                    isMobile ? "flex-col space-y-2" : "items-center space-x-4"
+                  } text-xs sm:text-sm`}
+                >
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-[#FF5A5F] rounded-full"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-[#FF5A5F] rounded-full"></div>
                     <span className="text-gray-600">有打卡记录</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-blue-500 rounded-full"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-blue-500 rounded-full"></div>
                     <span className="text-gray-600">今天</span>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <div className="w-4 h-4 bg-purple-500 rounded-full border-2 border-blue-400"></div>
+                    <div className="w-3 h-3 sm:w-4 sm:h-4 bg-purple-500 rounded-full border-2 border-blue-400"></div>
                     <span className="text-gray-600">今天已打卡</span>
                   </div>
                 </div>
               </div>
 
-              <div className="calendar-container bg-white rounded-2xl p-4 shadow-lg border border-gray-100 mr-3">
+              <div
+                className={`calendar-container bg-white rounded-2xl p-2 sm:p-4 shadow-lg border border-gray-100 ${
+                  isMobile ? "" : "mr-3"
+                }`}
+              >
                 <DayPicker
                   mode="single"
                   selected={selectedDate || undefined}
@@ -189,21 +219,27 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
 
             {/* 右侧详情面板 */}
             <div
-              className="border-l border-gray-100 bg-gray-50 flex flex-col"
-              style={{ width: "450px", height: "100%" }}
+              className={`${
+                isMobile ? "border-t mt-4 pt-4" : "border-l"
+              } border-gray-100 bg-gray-50 flex flex-col`}
+              style={{
+                width: isMobile ? "100%" : "450px",
+                height: isMobile ? "auto" : "100%",
+                minHeight: isMobile ? "200px" : "auto",
+              }}
             >
               {selectedDate ? (
                 <div className="flex flex-col h-full">
                   {/* 固定的头部 */}
-                  <div className="p-6 pb-0 flex-shrink-0">
-                    <div className="mb-6">
-                      <div className="flex items-center space-x-3 mb-2">
-                        <CheckCircle className="w-6 h-6 text-[#FF5A5F]" />
-                        <h3 className="text-lg font-bold text-gray-800">
+                  <div className="p-4 sm:p-6 pb-0 flex-shrink-0">
+                    <div className="mb-4 sm:mb-6">
+                      <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
+                        <CheckCircle className="w-5 h-5 sm:w-6 sm:h-6 text-[#FF5A5F]" />
+                        <h3 className="text-base sm:text-lg font-bold text-gray-800">
                           {dayjs(selectedDate).format("MM月DD日")}
                         </h3>
                       </div>
-                      <p className="text-sm text-gray-500">
+                      <p className="text-xs sm:text-sm text-gray-500">
                         {dayjs(selectedDate).format("dddd")} ·{" "}
                         {selectedDateLogs.length} 次打卡
                       </p>
@@ -211,21 +247,25 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                   </div>
 
                   {/* 可滚动的内容区域 */}
-                  <div className="flex-1 overflow-y-auto px-6 pb-6">
+                  <div
+                    className={`flex-1 ${
+                      isMobile ? "overflow-visible" : "overflow-y-auto"
+                    } px-4 sm:px-6 pb-4 sm:pb-6`}
+                  >
                     <div className="space-y-4">
                       {selectedDateLogs
                         .sort((a, b) => b.timestamp - a.timestamp)
                         .map((log, index) => (
                           <div
                             key={log.id}
-                            className="bg-white rounded-2xl p-4 shadow-sm border border-gray-200"
+                            className="bg-white rounded-2xl p-3 sm:p-4 shadow-sm border border-gray-200"
                           >
-                            <div className="flex items-center space-x-3 mb-3">
-                              <div className="w-8 h-8 bg-[#FF5A5F] bg-opacity-10 rounded-xl flex items-center justify-center">
-                                <Clock className="w-4 h-4 text-[#FF5A5F]" />
+                            <div className="flex items-center space-x-2 sm:space-x-3 mb-3">
+                              <div className="w-6 h-6 sm:w-8 sm:h-8 bg-[#FF5A5F] bg-opacity-10 rounded-xl flex items-center justify-center">
+                                <Clock className="w-3 h-3 sm:w-4 sm:h-4 text-[#FF5A5F]" />
                               </div>
                               <div>
-                                <p className="font-semibold text-gray-800">
+                                <p className="text-sm sm:text-base font-semibold text-gray-800">
                                   {dayjs(log.timestamp).format("HH:mm")}
                                 </p>
                                 <p className="text-xs text-gray-500">
@@ -235,18 +275,18 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                             </div>
 
                             {log.note && (
-                              <div className="flex items-start space-x-3">
-                                <FileText className="w-4 h-4 text-gray-400 mt-1 flex-shrink-0" />
-                                <p className="text-sm text-gray-600 leading-relaxed">
+                              <div className="flex items-start space-x-2 sm:space-x-3">
+                                <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-400 mt-1 flex-shrink-0" />
+                                <p className="text-xs sm:text-sm text-gray-600 leading-relaxed">
                                   {log.note}
                                 </p>
                               </div>
                             )}
 
                             {!log.note && (
-                              <div className="flex items-center space-x-3">
-                                <FileText className="w-4 h-4 text-gray-300" />
-                                <p className="text-sm text-gray-400 italic">
+                              <div className="flex items-center space-x-2 sm:space-x-3">
+                                <FileText className="w-3 h-3 sm:w-4 sm:h-4 text-gray-300" />
+                                <p className="text-xs sm:text-sm text-gray-400 italic">
                                   无备注
                                 </p>
                               </div>
@@ -257,16 +297,21 @@ const CalendarModal: React.FC<CalendarModalProps> = ({
                   </div>
                 </div>
               ) : (
-                <div className="h-full flex items-center justify-center p-6">
+                <div
+                  className={`${
+                    isMobile ? "py-8" : "h-full"
+                  } flex items-center justify-center p-4 sm:p-6`}
+                >
                   <div className="text-center">
-                    <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <CalendarIcon className="w-8 h-8 text-gray-400" />
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <CalendarIcon className="w-6 h-6 sm:w-8 sm:h-8 text-gray-400" />
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-600 mb-2">
+                    <h3 className="text-base sm:text-lg font-semibold text-gray-600 mb-2">
                       选择日期
                     </h3>
-                    <p className="text-sm text-gray-500 max-w-48">
-                      点击左侧日历中的红色日期查看详细的打卡记录
+                    <p className="text-xs sm:text-sm text-gray-500 max-w-48">
+                      点击{isMobile ? "上方" : "左侧"}
+                      日历中的红色日期查看详细的打卡记录
                     </p>
                   </div>
                 </div>

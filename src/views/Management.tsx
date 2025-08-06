@@ -283,15 +283,18 @@ const Management: React.FC = () => {
   return (
     <div className="space-y-8">
       {/* 分类管理 */}
-      <div className="card p-8">
+      <div className="card p-4 sm:p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">分类管理</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+            分类管理
+          </h2>
           <button
             onClick={openAddCategoryDialog}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
           >
             <Plus className="w-4 h-4" />
-            <span>添加分类</span>
+            <span className="hidden sm:inline">添加分类</span>
+            <span className="sm:hidden">添加</span>
           </button>
         </div>
 
@@ -300,7 +303,7 @@ const Management: React.FC = () => {
             {categories.map((category) => (
               <div
                 key={category.id}
-                className="group flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-[#FF5A5F] transition-all duration-200 hover:shadow-md"
+                className="group flex items-center justify-between p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-[#FF5A5F] transition-all duration-200 hover:shadow-md"
               >
                 <div className="flex items-center space-x-3">
                   <div className="w-3 h-3 rounded-full bg-[#FF5A5F]"></div>
@@ -308,20 +311,24 @@ const Management: React.FC = () => {
                     {category.name}
                   </span>
                 </div>
-                <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <div className="flex items-center space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                   <button
                     onClick={() => openEditCategoryDialog(category)}
-                    className="flex items-center space-x-1 px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
+                    className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
                   >
                     <Edit2 className="w-4 h-4" />
-                    <span className="text-sm">编辑</span>
+                    <span className="text-xs sm:text-sm hidden sm:inline">
+                      编辑
+                    </span>
                   </button>
                   <button
                     onClick={() => deleteCategory(category.id)}
-                    className="flex items-center space-x-1 px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
+                    className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
                   >
                     <Trash2 className="w-4 h-4" />
-                    <span className="text-sm">删除</span>
+                    <span className="text-xs sm:text-sm hidden sm:inline">
+                      删除
+                    </span>
                   </button>
                 </div>
               </div>
@@ -343,7 +350,7 @@ const Management: React.FC = () => {
         >
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl z-50">
+            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md mx-4 shadow-2xl z-50">
               <div className="flex items-center justify-between mb-6">
                 <Dialog.Title className="text-2xl font-semibold text-gray-800">
                   {editCategory ? "编辑分类" : "添加分类"}
@@ -391,15 +398,18 @@ const Management: React.FC = () => {
       </div>
 
       {/* 项目管理 */}
-      <div className="card p-8">
+      <div className="card p-4 sm:p-8">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-semibold text-gray-800">项目管理</h2>
+          <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+            项目管理
+          </h2>
           <button
             onClick={openAddHabitDialog}
-            className="inline-flex items-center space-x-2 px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg"
+            className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
           >
             <Plus className="w-4 h-4" />
-            <span>添加项目</span>
+            <span className="hidden sm:inline">添加项目</span>
+            <span className="sm:hidden">添加</span>
           </button>
         </div>
 
@@ -412,45 +422,51 @@ const Management: React.FC = () => {
               return (
                 <div
                   key={habit.id}
-                  className="group flex items-center justify-between p-4 rounded-lg border border-gray-200 hover:border-[#FF5A5F] transition-all duration-200 hover:shadow-md"
+                  className="group flex items-center justify-between p-3 sm:p-4 rounded-lg border border-gray-200 hover:border-[#FF5A5F] transition-all duration-200 hover:shadow-md"
                 >
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-3 mb-2">
-                      <span className="font-medium text-gray-800 text-lg">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
+                      <span className="font-medium text-gray-800 text-base sm:text-lg truncate">
                         {habit.name}
                       </span>
                       {category && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full">
+                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full flex-shrink-0">
                           {category.name}
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center space-x-1 text-sm text-gray-500">
-                      <Clock className="w-4 h-4" />
+                    <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500">
+                      <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                       <span>提醒时间：{habit.reminderTime || "未设置"}</span>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="flex items-center space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                     <button
                       onClick={() => navigate(`/habit/${habit.id}`)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
                     >
                       <Info className="w-4 h-4" />
-                      <span className="text-sm">详情</span>
+                      <span className="text-xs sm:text-sm hidden sm:inline">
+                        详情
+                      </span>
                     </button>
                     <button
                       onClick={() => openEditHabitDialog(habit)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
                     >
                       <Edit2 className="w-4 h-4" />
-                      <span className="text-sm">编辑</span>
+                      <span className="text-xs sm:text-sm hidden sm:inline">
+                        编辑
+                      </span>
                     </button>
                     <button
                       onClick={() => deleteHabit(habit.id)}
-                      className="flex items-center space-x-1 px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
+                      className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span className="text-sm">删除</span>
+                      <span className="text-xs sm:text-sm hidden sm:inline">
+                        删除
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -472,7 +488,7 @@ const Management: React.FC = () => {
         <Dialog.Root open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>
           <Dialog.Portal>
             <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-8 w-full max-w-lg shadow-2xl z-50">
+            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-lg mx-4 shadow-2xl z-50">
               <div className="flex items-center justify-between mb-6">
                 <Dialog.Title className="text-2xl font-semibold text-gray-800">
                   {editHabit ? "编辑项目" : "添加项目"}
