@@ -2,9 +2,13 @@
   <!-- 背景圆 -->
   <circle cx="16" cy="16" r="16" fill="#FF5A5F"/>
   
-  <!-- 内部圆环 -->
-  <circle cx="16" cy="16" r="10" fill="none" stroke="white" stroke-width="1.5"/>
-  
-  <!-- 对勾 -->
-  <path d="M11 16L14.5 19.5L21 13" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Target/靶心图标 -->
+  <!-- 外环 -->
+  <circle cx="16" cy="16" r="11" fill="none" stroke="white" stroke-width="1.5"/>
+  <!-- 中环 -->
+  <circle cx="16" cy="16" r="7" fill="none" stroke="white" stroke-width="1.5"/>
+  <!-- 内环 -->
+  <circle cx="16" cy="16" r="3" fill="none" stroke="white" stroke-width="1.5"/>
+  <!-- 中心点 -->
+  <circle cx="16" cy="16" r="1" fill="white"/>
 </svg>
