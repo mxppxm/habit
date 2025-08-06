@@ -396,10 +396,10 @@ const Dashboard: React.FC = () => {
               <div className="text-sm text-gray-400">
                 或者查看
                 <button
-                  onClick={() => navigate("/statistics")}
+                  onClick={() => navigate("/about")}
                   className="text-[#FF5A5F] hover:text-pink-600 mx-1 underline"
                 >
-                  统计页面
+                  关于页面
                 </button>
                 了解更多
               </div>

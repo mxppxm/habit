@@ -5,35 +5,50 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { useNavigate } from "react-router-dom";
 import { useHabitStore } from "../../stores/useHabitStore";
 import { getRandomQuote, getRefreshQuote, Quote } from "../../utils/quotes";
+import FlipClockCountdown from "@leenguyen/react-flip-clock-countdown";
+import "@leenguyen/react-flip-clock-countdown/dist/index.css";
+import "./flip-clock-custom.css";
 
 /**
- * Airbnb风格头部时间展示组件
- * 显示当前时间，每秒刷新一次
+ * Airbnb风格头部组件
+ * 显示距离今日结束的倒计时，激励用户抓紧时间完成习惯
  */
 export const Header: React.FC = () => {
-  const [currentTime, setCurrentTime] = useState(
-    dayjs().format("YYYY-MM-DD HH:mm:ss")
-  );
   const { userName, updateUserName } = useHabitStore();
   const [isEditing, setIsEditing] = useState(false);
   const [tempUserName, setTempUserName] = useState(userName);
   const [currentQuote, setCurrentQuote] = useState<Quote | null>(null);
   const [isRefreshingQuote, setIsRefreshingQuote] = useState(false);
+  const [urgencyLevel, setUrgencyLevel] = useState<
+    "normal" | "warning" | "urgent"
+  >("normal");
+  const [targetTime, setTargetTime] = useState(dayjs().endOf("day").valueOf());
   const navigate = useNavigate();
 
+  // 更新紧迫程度和目标时间
   useEffect(() => {
-    // 更新时间的函数
-    const updateTime = () => {
-      setCurrentTime(dayjs().format("YYYY-MM-DD HH:mm:ss"));
+    const updateCountdown = () => {
+      const now = dayjs();
+      const endOfDay = now.endOf("day");
+      const diff = endOfDay.diff(now);
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+
+      // 更新紧迫程度
+      if (hours < 1) {
+        setUrgencyLevel("urgent");
+      } else if (hours < 3) {
+        setUrgencyLevel("warning");
+      } else {
+        setUrgencyLevel("normal");
+      }
+
+      // 更新目标时间
+      setTargetTime(endOfDay.valueOf());
     };
 
-    // 设置定时器，每秒更新一次
-    const timer = setInterval(updateTime, 1000);
-
-    // 清理函数，组件卸载时清除定时器
-    return () => {
-      clearInterval(timer);
-    };
+    updateCountdown();
+    const timer = setInterval(updateCountdown, 1000); // 每秒更新一次
+    return () => clearInterval(timer);
   }, []);
 
   useEffect(() => {
@@ -190,9 +205,36 @@ export const Header: React.FC = () => {
             </div>
           )}
 
-          {/* 右侧：时间 */}
+          {/* 右侧：今日倒计时 */}
           <div className="flex-shrink-0">
-            <p className="text-md text-gray-600">{currentTime}</p>
+            <div className="flex flex-col items-center space-y-1">
+              <FlipClockCountdown
+                key={targetTime}
+                to={targetTime}
+                labels={["天", "时", "分", "秒"]}
+                renderMap={[false, true, true, true]}
+                showLabels={false}
+                showSeparators={true}
+                digitBlockStyle={{
+                  width: 40,
+                  height: 60,
+                  fontSize: 30,
+                  fontWeight: "bold",
+                }}
+                className={`flip-clock-custom ${urgencyLevel}`}
+              />
+              <span
+                className={`text-xs font-medium ${
+                  urgencyLevel === "urgent"
+                    ? "text-red-600"
+                    : urgencyLevel === "warning"
+                    ? "text-orange-600"
+                    : "text-green-600"
+                }`}
+              >
+                今日剩余
+              </span>
+            </div>
           </div>
         </div>
       </div>

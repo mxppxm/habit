@@ -1,0 +1,99 @@
+/* 自定义翻页时钟渐变样式 */
+.flip-clock-custom {
+  --fcc-flip-duration: 0.5s;
+  --fcc-digit-block-width: 40px;
+  --fcc-digit-block-height: 60px;
+  --fcc-digit-block-radius: 8px;
+  --fcc-digit-block-spacing: 4px;
+  --fcc-digit-font-size: 30px;
+  --fcc-digit-color: white;
+  --fcc-divider-color: rgba(255, 255, 255, 0.3);
+  --fcc-divider-height: 1px;
+  --fcc-separator-size: 6px;
+  --fcc-spacing: 6px;
+  --fcc-separator-color: #8b5cf6;
+}
+
+/* 正常状态 - 警示红色渐变 */
+.flip-clock-custom {
+  --fcc-background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
+  --fcc-separator-color: #f44336;
+}
+
+/* 数字块渐变效果 */
+.flip-clock-custom .fcc-digit-block {
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+  box-shadow: 0 4px 20px rgba(244, 67, 54, 0.6);
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  transition: all 0.3s ease;
+  animation: pulse-urgent 1.5s ease-in-out infinite alternate;
+}
+
+/* 警告状态 - 温暖橙色渐变 */
+.flip-clock-custom.warning {
+  --fcc-separator-color: #ff9800;
+}
+
+.flip-clock-custom.warning .fcc-digit-block {
+  background: linear-gradient(135deg, #ff9800 0%, #ff8a00 100%) !important;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5);
+  animation: pulse-warning 3s ease-in-out infinite alternate;
+}
+
+/* 紧急状态 - 清新绿色渐变 */
+.flip-clock-custom.urgent {
+  --fcc-separator-color: #4caf50;
+}
+
+.flip-clock-custom.urgent .fcc-digit-block {
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%) !important;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
+  animation: none;
+}
+
+/* 警告状态轻微脉冲动画 */
+@keyframes pulse-warning {
+  0% {
+    box-shadow: 0 4px 15px rgba(255, 152, 0, 0.5);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 6px 20px rgba(255, 152, 0, 0.7);
+    transform: scale(1.01);
+  }
+}
+
+/* 紧急状态强烈脉冲动画 */
+@keyframes pulse-urgent {
+  0% {
+    box-shadow: 0 4px 20px rgba(244, 67, 54, 0.6);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 8px 30px rgba(244, 67, 54, 0.9);
+    transform: scale(1.03);
+  }
+}
+
+/* Hover效果 */
+.flip-clock-custom:hover .fcc-digit-block {
+  transform: translateY(-2px);
+}
+
+/* 分隔符样式 */
+.flip-clock-custom .fcc-separator {
+  background: var(--fcc-separator-color) !important;
+  border-radius: 50%;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+/* 整体容器增强 */
+.flip-clock-custom {
+  filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.1));
+}
+
+/* 翻页动画增强 */
+.flip-clock-custom .fcc-digit-block .fcc-digit-top,
+.flip-clock-custom .fcc-digit-block .fcc-digit-bottom {
+  background: inherit;
+}
