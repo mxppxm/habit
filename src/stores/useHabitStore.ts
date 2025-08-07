@@ -34,6 +34,7 @@ interface HabitStore {
     name: string,
     reminderTime?: string
   ) => Promise<void>;
+  updateHabitCategory: (id: string, categoryId: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   checkinHabit: (habitId: string, note: string) => Promise<void>;
   deleteHabitLog: (logId: string) => Promise<void>;
@@ -132,6 +133,23 @@ export const useHabitStore = create<HabitStore>()(
               h.id === id ? { ...h, name, reminderTime } : h
             ),
           }));
+        } catch (error: any) {
+          set({ error: error.message });
+        }
+      },
+      updateHabitCategory: async (id, categoryId) => {
+        try {
+          const habit = useHabitStore
+            .getState()
+            .habits.find((h) => h.id === id);
+          if (habit) {
+            await putData("habits", { ...habit, categoryId });
+            set((state) => ({
+              habits: state.habits.map((h) =>
+                h.id === id ? { ...h, categoryId } : h
+              ),
+            }));
+          }
         } catch (error: any) {
           set({ error: error.message });
         }

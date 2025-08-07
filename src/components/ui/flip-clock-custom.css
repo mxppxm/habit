@@ -14,19 +14,19 @@
   --fcc-separator-color: #8b5cf6;
 }
 
-/* 正常状态 - 警示红色渐变 */
+/* 正常状态 - 清新绿色渐变 */
 .flip-clock-custom {
-  --fcc-background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
-  --fcc-separator-color: #f44336;
+  --fcc-background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%);
+  --fcc-separator-color: #4caf50;
 }
 
 /* 数字块渐变效果 */
 .flip-clock-custom .fcc-digit-block {
-  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
-  box-shadow: 0 4px 20px rgba(244, 67, 54, 0.6);
+  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%) !important;
+  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
   border: 2px solid rgba(255, 255, 255, 0.3);
   transition: all 0.3s ease;
-  animation: pulse-urgent 1.5s ease-in-out infinite alternate;
+  animation: none;
 }
 
 /* 警告状态 - 温暖橙色渐变 */
@@ -40,15 +40,15 @@
   animation: pulse-warning 3s ease-in-out infinite alternate;
 }
 
-/* 紧急状态 - 清新绿色渐变 */
+/* 紧急状态 - 警示红色渐变 */
 .flip-clock-custom.urgent {
-  --fcc-separator-color: #4caf50;
+  --fcc-separator-color: #f44336;
 }
 
 .flip-clock-custom.urgent .fcc-digit-block {
-  background: linear-gradient(135deg, #4caf50 0%, #66bb6a 100%) !important;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.4);
-  animation: none;
+  background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%) !important;
+  box-shadow: 0 4px 20px rgba(244, 67, 54, 0.6);
+  animation: pulse-urgent 1.5s ease-in-out infinite alternate;
 }
 
 /* 警告状态轻微脉冲动画 */

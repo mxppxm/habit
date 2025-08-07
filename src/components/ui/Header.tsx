@@ -46,9 +46,9 @@ export const Header: React.FC = () => {
       const hours = Math.floor(diff / (1000 * 60 * 60));
 
       // 更新紧迫程度
-      if (hours < 1) {
+      if (hours <= 2) {
         setUrgencyLevel("urgent");
-      } else if (hours < 3) {
+      } else if (hours <= 5) {
         setUrgencyLevel("warning");
       } else {
         setUrgencyLevel("normal");
