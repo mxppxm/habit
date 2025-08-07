@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHabitStore } from "../stores/useHabitStore";
+
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
   Download,
@@ -47,6 +48,8 @@ const Settings: React.FC = () => {
   const [clearSuccess, setClearSuccess] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+
+  // 移除了导出数据的快捷键功能
 
   // 导出数据
   const handleExport = () => {
@@ -200,6 +203,20 @@ const Settings: React.FC = () => {
 
   return (
     <div className="space-y-6 sm:space-y-8">
+      {/* 快捷键提示 */}
+      <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+        <h3 className="text-sm font-medium text-blue-800 mb-2">
+          🎯 快捷键提示
+        </h3>
+        <div className="grid grid-cols-1 gap-2 text-sm text-blue-700">
+          <div className="flex items-center justify-between">
+            <span>页面导航</span>
+            <kbd className="px-2 py-1 bg-white border border-blue-200 rounded text-xs font-mono">
+              1-5
+            </kbd>
+          </div>
+        </div>
+      </div>
       {/* 导出数据 */}
       <div className="card p-6 sm:p-8">
         <div className="flex items-center space-x-3 mb-6">

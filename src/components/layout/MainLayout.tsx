@@ -1,5 +1,7 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+import { Link, Outlet, useLocation, useNavigate } from "react-router-dom";
 import { Header } from "../ui/Header";
+import { KeyboardShortcutsHelp } from "../ui/KeyboardShortcutsHelp";
+import { useKeyboardShortcuts } from "../../hooks/useKeyboardShortcuts";
 import { Home, Settings, BarChart3, FolderOpen, Info } from "lucide-react";
 
 /**
@@ -8,15 +10,25 @@ import { Home, Settings, BarChart3, FolderOpen, Info } from "lucide-react";
  */
 export const MainLayout: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   // 导航菜单项
   const navItems = [
-    { path: "/", label: "首页", icon: Home },
-    { path: "/management", label: "管理", icon: FolderOpen },
-    { path: "/statistics", label: "统计", icon: BarChart3 },
-    { path: "/settings", label: "设置", icon: Settings },
-    { path: "/about", label: "关于", icon: Info },
+    { path: "/", label: "首页", icon: Home, shortcut: "1" },
+    { path: "/management", label: "管理", icon: FolderOpen, shortcut: "2" },
+    { path: "/statistics", label: "统计", icon: BarChart3, shortcut: "3" },
+    { path: "/settings", label: "设置", icon: Settings, shortcut: "4" },
+    { path: "/about", label: "关于", icon: Info, shortcut: "5" },
   ];
+
+  // 导航快捷键
+  useKeyboardShortcuts(
+    navItems.map((item) => ({
+      key: item.shortcut,
+      handler: () => navigate(item.path),
+      preventDefault: true,
+    }))
+  );
 
   return (
     <div className="min-h-screen bg-[#F7F7F7]">
@@ -67,6 +79,9 @@ export const MainLayout: React.FC = () => {
       <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
         <Outlet />
       </main>
+
+      {/* 键盘快捷键帮助 */}
+      <KeyboardShortcutsHelp />
     </div>
   );
 };

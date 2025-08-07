@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { useHabitStore } from "../stores/useHabitStore";
 import { useNavigate } from "react-router-dom";
+import { formatShortcut } from "../hooks/useKeyboardShortcuts";
+import { EnhancedDialog } from "../components/ui/EnhancedDialog";
 import {
   Plus,
   X,
@@ -223,6 +225,8 @@ const Management: React.FC = () => {
   const [editHabit, setEditHabit] = useState<any>(null);
   const [habitDialogOpen, setHabitDialogOpen] = useState(false);
 
+  // 移除了新建功能的快捷键，避免与浏览器快捷键冲突
+
   const handleCategorySubmit = async () => {
     if (!categoryName.trim()) return;
 
@@ -344,57 +348,58 @@ const Management: React.FC = () => {
           </div>
         )}
 
-        <Dialog.Root
+        <EnhancedDialog
           open={categoryDialogOpen}
           onOpenChange={setCategoryDialogOpen}
+          onConfirm={handleCategorySubmit}
+          confirmDisabled={!categoryName.trim()}
+          confirmShortcut={{ key: "Enter" }}
         >
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md mx-4 shadow-2xl z-50">
-              <div className="flex items-center justify-between mb-6">
-                <Dialog.Title className="text-2xl font-semibold text-gray-800">
-                  {editCategory ? "编辑分类" : "添加分类"}
-                </Dialog.Title>
-                <Dialog.Close asChild>
-                  <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </Dialog.Close>
-              </div>
+          <div className="flex items-center justify-between mb-6">
+            <Dialog.Title className="text-2xl font-semibold text-gray-800">
+              {editCategory ? "编辑分类" : "添加分类"}
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </Dialog.Close>
+          </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    分类名称
-                  </label>
-                  <input
-                    type="text"
-                    value={categoryName}
-                    onChange={(e) => setCategoryName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200"
-                    placeholder="输入分类名称"
-                    autoFocus
-                  />
-                </div>
-              </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                分类名称
+              </label>
+              <input
+                type="text"
+                value={categoryName}
+                onChange={(e) => setCategoryName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200"
+                placeholder="输入分类名称"
+                autoFocus
+              />
+            </div>
+          </div>
 
-              <div className="flex justify-end space-x-3 mt-8">
-                <Dialog.Close asChild>
-                  <button className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium">
-                    取消
-                  </button>
-                </Dialog.Close>
-                <button
-                  onClick={handleCategorySubmit}
-                  className="px-6 py-2.5 bg-[#FF5A5F] text-white rounded-xl hover:bg-pink-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
-                  disabled={!categoryName.trim()}
-                >
-                  保存
-                </button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+          <div className="flex justify-end space-x-3 mt-8">
+            <Dialog.Close asChild>
+              <button className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium">
+                取消
+              </button>
+            </Dialog.Close>
+            <button
+              onClick={handleCategorySubmit}
+              className="px-6 py-2.5 bg-[#FF5A5F] text-white rounded-xl hover:bg-pink-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+              disabled={!categoryName.trim()}
+            >
+              保存
+              <span className="text-xs text-pink-200 ml-2 opacity-70">
+                {formatShortcut({ key: "Enter" })}
+              </span>
+            </button>
+          </div>
+        </EnhancedDialog>
       </div>
 
       {/* 项目管理 */}
@@ -485,82 +490,87 @@ const Management: React.FC = () => {
           </div>
         )}
 
-        <Dialog.Root open={habitDialogOpen} onOpenChange={setHabitDialogOpen}>
-          <Dialog.Portal>
-            <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
-            <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-lg mx-4 shadow-2xl z-50">
-              <div className="flex items-center justify-between mb-6">
-                <Dialog.Title className="text-2xl font-semibold text-gray-800">
-                  {editHabit ? "编辑项目" : "添加项目"}
-                </Dialog.Title>
-                <Dialog.Close asChild>
-                  <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-                    <X className="w-5 h-5 text-gray-500" />
-                  </button>
-                </Dialog.Close>
-              </div>
+        <EnhancedDialog
+          open={habitDialogOpen}
+          onOpenChange={setHabitDialogOpen}
+          onConfirm={handleHabitSubmit}
+          confirmDisabled={!habitName.trim() || !selectedCategory}
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-lg mx-4 shadow-2xl z-50"
+          confirmShortcut={{ key: "Enter" }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <Dialog.Title className="text-2xl font-semibold text-gray-800">
+              {editHabit ? "编辑项目" : "添加项目"}
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </Dialog.Close>
+          </div>
 
-              <div className="space-y-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    项目名称
-                  </label>
-                  <input
-                    type="text"
-                    value={habitName}
-                    onChange={(e) => setHabitName(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200"
-                    placeholder="输入项目名称"
-                    autoFocus
-                  />
-                </div>
+          <div className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                项目名称
+              </label>
+              <input
+                type="text"
+                value={habitName}
+                onChange={(e) => setHabitName(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200"
+                placeholder="输入项目名称"
+                autoFocus
+              />
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    选择分类
-                  </label>
-                  <CategorySelector
-                    value={selectedCategory}
-                    onChange={setSelectedCategory}
-                    categories={categories}
-                    placeholder="请选择分类"
-                  />
-                  {categories.length === 0 && (
-                    <p className="text-sm text-gray-500 mt-1">
-                      请先创建分类再添加项目
-                    </p>
-                  )}
-                </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                选择分类
+              </label>
+              <CategorySelector
+                value={selectedCategory}
+                onChange={setSelectedCategory}
+                categories={categories}
+                placeholder="请选择分类"
+              />
+              {categories.length === 0 && (
+                <p className="text-sm text-gray-500 mt-1">
+                  请先创建分类再添加项目
+                </p>
+              )}
+            </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    提醒时间{" "}
-                    <span className="text-gray-400 font-normal">(可选)</span>
-                  </label>
-                  <TimePicker value={reminderTime} onChange={setReminderTime} />
-                  <p className="text-xs text-gray-500 mt-1">
-                    不设置时间则不会收到提醒
-                  </p>
-                </div>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                提醒时间{" "}
+                <span className="text-gray-400 font-normal">(可选)</span>
+              </label>
+              <TimePicker value={reminderTime} onChange={setReminderTime} />
+              <p className="text-xs text-gray-500 mt-1">
+                不设置时间则不会收到提醒
+              </p>
+            </div>
+          </div>
 
-              <div className="flex justify-end space-x-3 mt-8">
-                <Dialog.Close asChild>
-                  <button className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium">
-                    取消
-                  </button>
-                </Dialog.Close>
-                <button
-                  onClick={handleHabitSubmit}
-                  className="px-6 py-2.5 bg-[#FF5A5F] text-white rounded-xl hover:bg-pink-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                  disabled={!habitName.trim() || !selectedCategory}
-                >
-                  保存
-                </button>
-              </div>
-            </Dialog.Content>
-          </Dialog.Portal>
-        </Dialog.Root>
+          <div className="flex justify-end space-x-3 mt-8">
+            <Dialog.Close asChild>
+              <button className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium">
+                取消
+              </button>
+            </Dialog.Close>
+            <button
+              onClick={handleHabitSubmit}
+              className="px-6 py-2.5 bg-[#FF5A5F] text-white rounded-xl hover:bg-pink-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!habitName.trim() || !selectedCategory}
+            >
+              保存
+              <span className="text-xs text-pink-200 ml-2 opacity-70">
+                {formatShortcut({ key: "Enter" })}
+              </span>
+            </button>
+          </div>
+        </EnhancedDialog>
       </div>
     </div>
   );
