@@ -415,10 +415,10 @@ const Dashboard: React.FC = () => {
               <Target className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
             </div>
             <h3 className="text-xl sm:text-2xl font-semibold text-gray-800 mb-3">
-              开始你的习惯之旅
+              开始你的成长之旅
             </h3>
             <p className="text-gray-500 text-base sm:text-lg mb-6 leading-relaxed">
-              还没有任何习惯项目，创建你的第一个习惯开始打卡吧！
+              还没有任何习惯，创建你的第一个习惯开始打卡吧！
             </p>
             <div className="space-y-3">
               <button

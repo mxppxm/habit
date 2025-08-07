@@ -1,5 +1,5 @@
 /**
- * 分类数据结构
+ * 目标数据结构
  */
 export interface Category {
   id: string;

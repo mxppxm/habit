@@ -106,23 +106,23 @@ const Settings: React.FC = () => {
         checkinHabit,
       } = useHabitStore.getState();
 
-      // 导入分类 - 增量覆盖
+      // 导入目标 - 增量覆盖
       if (data.categories && Array.isArray(data.categories)) {
         for (const importCategory of data.categories) {
           const existingCategory = categories.find(
             (c) => c.id === importCategory.id
           );
           if (existingCategory) {
-            // 更新现有分类
+            // 更新现有目标
             await updateCategory(importCategory.id, importCategory.name);
           } else {
-            // 添加新分类，保持原有ID
+            // 添加新目标，保持原有ID
             await insertCategory(importCategory);
           }
         }
       }
 
-      // 重新获取最新的分类和习惯数据
+      // 重新获取最新的目标和习惯数据
       const updatedState = useHabitStore.getState();
 
       // 导入习惯 - 增量覆盖
@@ -401,7 +401,7 @@ const Settings: React.FC = () => {
               </div>
               <AlertDialog.Description className="text-gray-600 mb-6">
                 此操作将<strong>永久删除</strong>
-                所有分类、习惯项目和打卡记录。删除后无法恢复，请确认是否继续？
+                所有目标、习惯项目和打卡记录。删除后无法恢复，请确认是否继续？
               </AlertDialog.Description>
               <div className="flex justify-end space-x-3">
                 <AlertDialog.Cancel asChild>

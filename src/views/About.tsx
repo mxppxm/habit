@@ -22,7 +22,7 @@ const About: React.FC = () => {
     {
       icon: <Target className="w-6 h-6" />,
       title: "智能习惯管理",
-      description: "创建分类、设置提醒，系统化管理您的所有习惯项目",
+      description: "创建目标、设置提醒，系统化管理您的所有习惯项目",
       color: "from-blue-500 to-blue-600",
     },
     {

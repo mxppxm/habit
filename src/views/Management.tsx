@@ -126,13 +126,13 @@ const TimePicker: React.FC<{
   );
 };
 
-// 自定义分类选择器组件
+// 自定义目标选择器组件
 const CategorySelector: React.FC<{
   value: string;
   onChange: (value: string) => void;
   categories: { id: string; name: string }[];
   placeholder?: string;
-}> = ({ value, onChange, categories, placeholder = "请选择分类" }) => {
+}> = ({ value, onChange, categories, placeholder = "请选择目标" }) => {
   const [isOpen, setIsOpen] = useState(false);
 
   const selectedCategory = categories.find((cat) => cat.id === value);
@@ -204,8 +204,8 @@ const CategorySelector: React.FC<{
           ) : (
             <div className="py-8 text-center text-gray-500">
               <Tag className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">暂无分类</p>
-              <p className="text-xs text-gray-400">请先创建分类</p>
+              <p className="text-sm">暂无目标</p>
+              <p className="text-xs text-gray-400">请先创建目标</p>
             </div>
           )}
         </div>
@@ -342,14 +342,14 @@ const Management: React.FC = () => {
   const handleBatchDeleteCategories = async () => {
     if (selectedCategories.size === 0) return;
 
-    if (confirm(`确定要删除选中的 ${selectedCategories.size} 个分类吗？`)) {
+    if (confirm(`确定要删除选中的 ${selectedCategories.size} 个目标吗？`)) {
       try {
         for (const categoryId of selectedCategories) {
           await deleteCategory(categoryId);
         }
         exitBatchMode();
       } catch (error) {
-        alert("删除分类时出错，请重试");
+        alert("删除目标时出错，请重试");
       }
     }
   };
@@ -482,7 +482,7 @@ const Management: React.FC = () => {
 
   const handleCategorySubmit = async () => {
     if (editCategory) {
-      // 编辑模式，只处理单个分类
+      // 编辑模式，只处理单个目标
       if (!categoryName.trim()) return;
       await updateCategory(editCategory.id, categoryName);
       setEditCategory(null);
@@ -500,7 +500,7 @@ const Management: React.FC = () => {
         }
         setCategoryInputs([""]);
       } catch (error) {
-        alert("创建分类时出错，请重试");
+        alert("创建目标时出错，请重试");
         return;
       }
     }
@@ -562,7 +562,7 @@ const Management: React.FC = () => {
     setHabitInputs([""]);
     setHabitReminderTimes([""]);
     setFocusedIndex(0);
-    // 默认选择第一个分类
+    // 默认选择第一个目标
     setSelectedCategory(categories.length > 0 ? categories[0].id : "");
     setReminderTime("");
     setHabitDialogOpen(true);
@@ -578,13 +578,13 @@ const Management: React.FC = () => {
 
   return (
     <div className="space-y-8">
-      {/* 习惯分类 */}
+      {/* 目标 */}
       <div className="card p-4 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3">
             <FolderOpen className="w-6 h-6 text-[#FF5A5F]" />
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-              习惯分类
+              目标
             </h2>
             {batchMode && selectedCategories.size > 0 && (
               <span className="bg-[#FF5A5F] text-white px-2 py-1 rounded-full text-sm">
@@ -607,7 +607,7 @@ const Management: React.FC = () => {
                   className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
                 >
                   <Plus className="w-4 h-4" />
-                  <span className="hidden sm:inline">新建分类</span>
+                  <span className="hidden sm:inline">新建目标</span>
                   <span className="sm:hidden">新建</span>
                 </button>
               </>
@@ -709,8 +709,8 @@ const Management: React.FC = () => {
             <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
               <Plus className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="text-gray-500 text-lg mb-2">还没有分类</p>
-            <p className="text-gray-400 text-sm">创建分类来组织你的习惯项目</p>
+            <p className="text-gray-500 text-lg mb-2">还没有目标</p>
+            <p className="text-gray-400 text-sm">创建目标来领导你的习惯</p>
           </div>
         )}
 
@@ -727,7 +727,7 @@ const Management: React.FC = () => {
         >
           <div className="flex items-center justify-between mb-6">
             <Dialog.Title className="text-2xl font-semibold text-gray-800">
-              {editCategory ? "编辑分类" : "新建分类"}
+              {editCategory ? "编辑目标" : "新建目标"}
             </Dialog.Title>
             <Dialog.Close asChild>
               <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
@@ -741,14 +741,14 @@ const Management: React.FC = () => {
               // 编辑模式：单个输入框
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  分类名称
+                  目标名称
                 </label>
                 <input
                   type="text"
                   value={categoryName}
                   onChange={(e) => setCategoryName(e.target.value)}
                   className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200"
-                  placeholder="输入分类名称"
+                  placeholder="输入目标名称"
                   autoFocus
                 />
               </div>
@@ -758,11 +758,8 @@ const Management: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <div>
                     <label className="block text-lg font-semibold text-gray-800 mb-1">
-                      创建分类
+                      创建目标
                     </label>
-                    <p className="text-sm text-gray-500">
-                      为你的习惯添加分类标签
-                    </p>
                   </div>
                   <div className="text-right">
                     <div className="flex items-center justify-end space-x-2">
@@ -824,7 +821,7 @@ const Management: React.FC = () => {
                             handleDialogKeyDown(e, false, index)
                           }
                           className="flex-1 px-4 py-3 border-2 border-gray-100 rounded-2xl focus:ring-2 focus:ring-[#FF5A5F]/20 focus:border-[#FF5A5F] outline-none transition-all duration-300 bg-gray-50/50 hover:bg-white hover:border-gray-200"
-                          placeholder={`分类名称 ${index + 1}，如：健康生活`}
+                          placeholder={`目标名称 ${index + 1}，如：健康生活`}
                           autoFocus={index === focusedIndex}
                         />
                         {categoryInputs.length > 1 && (
@@ -858,7 +855,7 @@ const Management: React.FC = () => {
                   >
                     <div className="flex items-center justify-center space-x-2">
                       <Plus className="w-5 h-5 group-hover:scale-110 transition-transform duration-200" />
-                      <span>添加新分类</span>
+                      <span>添加新目标</span>
                       <span className="text-xs text-gray-400">
                         ({categoryInputs.length}/{MAX_INPUTS})
                       </span>
@@ -893,13 +890,13 @@ const Management: React.FC = () => {
         </EnhancedDialog>
       </div>
 
-      {/* 我的习惯 */}
+      {/* 习惯 */}
       <div className="card p-4 sm:p-8">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 space-y-4 sm:space-y-0">
           <div className="flex items-center space-x-3">
             <Target className="w-6 h-6 text-[#FF5A5F]" />
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-              我的习惯
+              习惯
             </h2>
             {batchMode && selectedHabits.size > 0 && (
               <span className="bg-[#FF5A5F] text-white px-2 py-1 rounded-full text-sm">
@@ -1060,9 +1057,7 @@ const Management: React.FC = () => {
               <Target className="w-8 h-8 text-gray-400" />
             </div>
             <p className="text-gray-500 text-lg mb-2">还没有创建习惯</p>
-            <p className="text-gray-400 text-sm">
-              创建你的第一个习惯开始养成之旅
-            </p>
+            <p className="text-gray-400 text-sm">创建你的习惯来达成目标</p>
           </div>
         )}
 
@@ -1093,17 +1088,17 @@ const Management: React.FC = () => {
             {!editHabit && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  选择分类
+                  选择目标
                 </label>
                 <CategorySelector
                   value={selectedCategory}
                   onChange={setSelectedCategory}
                   categories={categories}
-                  placeholder="请选择分类"
+                  placeholder="请选择目标"
                 />
                 {categories.length === 0 && (
                   <p className="text-sm text-gray-500 mt-1">
-                    请先创建分类再添加习惯
+                    请先创建目标再添加习惯
                   </p>
                 )}
               </div>
@@ -1128,13 +1123,13 @@ const Management: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    选择分类
+                    选择目标
                   </label>
                   <CategorySelector
                     value={selectedCategory}
                     onChange={setSelectedCategory}
                     categories={categories}
-                    placeholder="请选择分类"
+                    placeholder="请选择目标"
                   />
                 </div>
 
@@ -1329,7 +1324,7 @@ const Management: React.FC = () => {
 
           <div className="mb-6">
             <p className="text-gray-600 mb-4">
-              将选中的 {selectedHabits.size} 个习惯移动到新的分类：
+              将选中的 {selectedHabits.size} 个习惯移动到新的目标：
             </p>
             <div className="space-y-2 max-h-32 overflow-y-auto p-3 bg-gray-50 rounded-lg">
               {Array.from(selectedHabits).map((habitId) => {
@@ -1349,13 +1344,13 @@ const Management: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              选择目标分类
+              选择目标目标
             </label>
             <CategorySelector
               value={batchMoveToCategory}
               onChange={setBatchMoveToCategory}
               categories={categories}
-              placeholder="请选择目标分类"
+              placeholder="请选择目标目标"
             />
           </div>
 
