@@ -11,6 +11,8 @@ import {
   AlertTriangle,
   Check,
   Loader2,
+  Brain,
+  Zap,
 } from "lucide-react";
 
 // 自定义文件上传组件
@@ -40,7 +42,7 @@ const FileUpload: React.FC<{
 };
 
 const Settings: React.FC = () => {
-  const { clearAll } = useHabitStore();
+  const { clearAll, aiEnabled, setAIEnabled } = useHabitStore();
   const navigate = useNavigate();
   const [exportData, setExportData] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -217,6 +219,89 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* AI 功能设置 */}
+      <div className="card p-6 sm:p-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl flex items-center justify-center">
+            <Brain className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+              AI 功能设置
+            </h2>
+            <p className="text-sm sm:text-base text-gray-500">
+              控制是否显示 AI 智能习惯生成功能
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+            <div className="flex-1">
+              <h3 className="text-lg font-medium text-gray-800 flex items-center space-x-2">
+                <Brain className="w-5 h-5 text-purple-600" />
+                <span>AI 智能习惯生成</span>
+              </h3>
+              <p className="text-sm text-gray-600 mt-1">
+                开启后，在目标管理页面会显示"🧠
+                AI生成"按钮，可生成个性化习惯建议
+              </p>
+            </div>
+            <button
+              onClick={() => setAIEnabled(!aiEnabled)}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+                aiEnabled ? "bg-purple-600" : "bg-gray-300"
+              }`}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  aiEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {aiEnabled && (
+            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Zap className="w-3 h-3 text-purple-600" />
+                </div>
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-purple-800">
+                    AI 功能已启用
+                  </h4>
+                  <ul className="text-sm text-purple-700 space-y-1">
+                    <li>• 在管理页面的目标卡片上会显示"🧠 AI生成"按钮</li>
+                    <li>• 点击后可根据目标生成10个个性化习惯建议</li>
+                    <li>• 支持配置 OpenAI API Key 获得更个性化的建议</li>
+                    <li>• 未配置 API Key 时会使用通用示例</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {!aiEnabled && (
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-6 h-6 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                  <Zap className="w-3 h-3 text-gray-500" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium text-gray-600">
+                    AI 功能已关闭
+                  </h4>
+                  <p className="text-sm text-gray-500 mt-1">
+                    开启后可在目标管理页面使用 AI 智能生成习惯建议功能
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* 导出数据 */}
       <div className="card p-6 sm:p-8">
         <div className="flex items-center space-x-3 mb-6">

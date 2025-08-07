@@ -18,6 +18,7 @@ interface HabitStore {
   userName: string;
   loading: boolean;
   error: string | null;
+  aiEnabled: boolean;
   init: () => Promise<void>;
   addCategory: (name: string) => Promise<void>;
   insertCategory: (category: Category) => Promise<void>;
@@ -40,6 +41,7 @@ interface HabitStore {
   deleteHabitLog: (logId: string) => Promise<void>;
   updateHabitLog: (logId: string, note: string) => Promise<void>;
   updateUserName: (name: string) => void;
+  setAIEnabled: (enabled: boolean) => void;
   clearAll: () => Promise<void>;
 }
 
@@ -52,6 +54,7 @@ export const useHabitStore = create<HabitStore>()(
       userName: "亲爱的朋友",
       loading: false,
       error: null,
+      aiEnabled: false,
       init: async () => {
         try {
           set({ loading: true });
@@ -209,6 +212,9 @@ export const useHabitStore = create<HabitStore>()(
       updateUserName: (name) => {
         set({ userName: name });
       },
+      setAIEnabled: (enabled) => {
+        set({ aiEnabled: enabled });
+      },
       clearAll: async () => {
         try {
           await clearAllData();
@@ -217,6 +223,7 @@ export const useHabitStore = create<HabitStore>()(
             habits: [],
             habitLogs: [],
             userName: "亲爱的朋友", // 重置用户名为默认值
+            aiEnabled: false, // 重置AI功能为默认值
           });
         } catch (error: any) {
           set({ error: error.message });
@@ -228,6 +235,7 @@ export const useHabitStore = create<HabitStore>()(
       getStorage: () => localStorage,
       partialize: (state) => ({
         userName: state.userName,
+        aiEnabled: state.aiEnabled,
       }),
     }
   )

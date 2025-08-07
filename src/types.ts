@@ -25,3 +25,21 @@ export interface HabitLog {
   timestamp: number;
   note: string;
 }
+
+/**
+ * AI 生成的习惯建议数据结构
+ */
+export interface AIHabitSuggestion {
+  name: string;
+  description: string;
+  difficulty: "简单" | "中等" | "困难";
+  frequency: string;
+  tips: string;
+}
+
+/**
+ * AI 习惯生成响应数据结构
+ */
+export interface AIHabitsResponse {
+  habits: AIHabitSuggestion[];
+}

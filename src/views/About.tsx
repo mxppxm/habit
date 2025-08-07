@@ -3,19 +3,19 @@ import {
   Heart,
   Shield,
   Target,
-  TrendingUp,
   Download,
   Upload,
-  Bell,
   BarChart3,
   Calendar,
-  Star,
   Github,
   Coffee,
   Crown,
   Compass,
   Zap,
   Award,
+  Brain,
+  Sparkles,
+  Lightbulb,
 } from "lucide-react";
 
 /**
@@ -45,6 +45,13 @@ const About: React.FC = () => {
 
   const features = [
     {
+      icon: <Brain className="w-6 h-6" />,
+      title: "AI 智能建议",
+      description: "根据目标智能生成个性化习惯建议，科学高效",
+      color: "from-purple-500 to-violet-600",
+      isNew: true,
+    },
+    {
       icon: <Compass className="w-6 h-6" />,
       title: "目标导向管理",
       description: "以终为始，将大目标分解为可执行的每日习惯",
@@ -60,7 +67,7 @@ const About: React.FC = () => {
       icon: <BarChart3 className="w-6 h-6" />,
       title: "成长数据洞察",
       description: "量化进步，用数据证明习惯的复利效应",
-      color: "from-purple-500 to-purple-600",
+      color: "from-indigo-500 to-indigo-600",
     },
     {
       icon: <Zap className="w-6 h-6" />,
@@ -74,22 +81,20 @@ const About: React.FC = () => {
       description: "本地存储，隐私保护，您的数据只属于您",
       color: "from-emerald-500 to-emerald-600",
     },
-    {
-      icon: <Download className="w-6 h-6" />,
-      title: "数据备份管理",
-      description: "随时备份恢复，保障您的习惯记录永不丢失",
-      color: "from-pink-500 to-pink-600",
-    },
   ];
 
   const stats = [
+    {
+      label: "AI 增强",
+      value: "智能建议",
+      icon: <Brain className="w-5 h-5" />,
+    },
     { label: "数据安全", value: "100%", icon: <Shield className="w-5 h-5" /> },
     {
       label: "隐私保护",
       value: "本地存储",
       icon: <Heart className="w-5 h-5" />,
     },
-    { label: "离线使用", value: "支持", icon: <Star className="w-5 h-5" /> },
     {
       label: "开源免费",
       value: "完全免费",
@@ -175,8 +180,14 @@ const About: React.FC = () => {
           {features.map((feature, index) => (
             <div
               key={index}
-              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1"
+              className="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition-all duration-300 hover:-translate-y-1 relative"
             >
+              {feature.isNew && (
+                <div className="absolute -top-2 -right-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs px-2 py-1 rounded-full shadow-lg flex items-center space-x-1">
+                  <Sparkles className="w-3 h-3" />
+                  <span>NEW</span>
+                </div>
+              )}
               <div className="flex items-center space-x-4 mb-4">
                 <div
                   className={`w-12 h-12 bg-gradient-to-br ${feature.color} rounded-xl flex items-center justify-center text-white`}
@@ -200,7 +211,19 @@ const About: React.FC = () => {
         <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
           设计理念
         </h2>
-        <div className="flex justify-around">
+        <div className="grid md:grid-cols-3 gap-8">
+          <div className="space-y-4">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+              <Brain className="w-5 h-5 mr-2 text-[#FF5A5F]" />
+              AI 赋能习惯
+            </h3>
+            <ul className="space-y-2 text-gray-600">
+              <li>• 智能分析目标，生成个性化习惯建议</li>
+              <li>• 多维度覆盖，从易到难科学规划</li>
+              <li>• 本地化适配，贴合中国用户场景</li>
+              <li>• 即使无AI，也有通用示例支持</li>
+            </ul>
+          </div>
           <div className="space-y-4">
             <h3 className="text-xl font-semibold text-gray-800 flex items-center">
               <Target className="w-5 h-5 mr-2 text-[#FF5A5F]" />
@@ -220,10 +243,117 @@ const About: React.FC = () => {
             </h3>
             <ul className="space-y-2 text-gray-600">
               <li>• 所有数据都保存在您的设备上</li>
-              <li>• 数据经过加密保护，确保安全</li>
+              <li>• API Key 本地存储，保护隐私</li>
               <li>• 无需注册账号，保护个人信息</li>
               <li>• 可以离线使用，无需联网</li>
             </ul>
+          </div>
+        </div>
+      </div>
+
+      {/* AI 功能亮点 */}
+      <div className="bg-gradient-to-br from-purple-50 to-violet-50 rounded-2xl p-8 border border-purple-100">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl mb-4">
+            <Brain className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+            AI 智能习惯生成
+          </h2>
+          <p className="text-gray-600 max-w-2xl mx-auto">
+            基于先进的 AI 技术，为您的每个目标量身定制科学的习惯养成路径
+          </p>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+              <Lightbulb className="w-5 h-5 mr-2 text-purple-600" />
+              智能特性
+            </h3>
+            <div className="space-y-4">
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                <div>
+                  <h4 className="font-medium text-gray-800">个性化建议</h4>
+                  <p className="text-sm text-gray-600">
+                    根据目标名称生成10个贴合的习惯建议
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                <div>
+                  <h4 className="font-medium text-gray-800">科学分级</h4>
+                  <p className="text-sm text-gray-600">
+                    智能分类简单、中等、困难三个难度等级
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                <div>
+                  <h4 className="font-medium text-gray-800">本地化适配</h4>
+                  <p className="text-sm text-gray-600">
+                    专为中国用户的生活场景优化
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3">
+                <div className="w-2 h-2 rounded-full bg-purple-500 mt-2"></div>
+                <div>
+                  <h4 className="font-medium text-gray-800">多维度覆盖</h4>
+                  <p className="text-sm text-gray-600">
+                    涵盖行为、心态、技能、健康等各个方面
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-6">
+            <h3 className="text-xl font-semibold text-gray-800 flex items-center">
+              <Sparkles className="w-5 h-5 mr-2 text-purple-600" />
+              使用体验
+            </h3>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold">
+                    1
+                  </div>
+                  <span className="text-gray-700">
+                    在目标卡片点击"🧠 AI生成"
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold">
+                    2
+                  </div>
+                  <span className="text-gray-700">AI 分析目标并生成建议</span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold">
+                    3
+                  </div>
+                  <span className="text-gray-700">
+                    选择喜欢的习惯添加到列表
+                  </span>
+                </div>
+                <div className="flex items-center space-x-2 text-sm">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center text-purple-600 font-semibold">
+                    4
+                  </div>
+                  <span className="text-gray-700">开始执行并记录成长</span>
+                </div>
+              </div>
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+              <p className="text-sm text-amber-800">
+                💡 <strong>贴心提示：</strong> 即使没有配置 API
+                Key，也能使用通用示例功能
+              </p>
+            </div>
           </div>
         </div>
       </div>
@@ -282,12 +412,18 @@ const About: React.FC = () => {
 
       {/* 版本信息 */}
       <div className="text-center space-y-4 py-8 border-t border-gray-200">
-        <div className="flex items-center justify-center space-x-2 text-gray-500">
-          <Coffee className="w-5 h-5" />
-          <span>专为习惯养成而生</span>
+        <div className="flex items-center justify-center space-x-4 text-gray-500">
+          <div className="flex items-center space-x-2">
+            <Coffee className="w-5 h-5" />
+            <span>专为习惯养成而生</span>
+          </div>
+          <div className="flex items-center space-x-2">
+            <Brain className="w-5 h-5" />
+            <span>AI 智能增强</span>
+          </div>
         </div>
         <p className="text-sm text-gray-400">
-          Version 1.0.0 • 让成功成为习惯的必然
+          Version 2.0.0 • AI 驱动的智能习惯管理系统
         </p>
       </div>
     </div>

@@ -4,6 +4,9 @@ import { useHabitStore } from "../stores/useHabitStore";
 import { useNavigate } from "react-router-dom";
 import { formatShortcut } from "../hooks/useKeyboardShortcuts";
 import { EnhancedDialog } from "../components/ui/EnhancedDialog";
+import { AIHabitsDialog } from "../components/ui/AIHabitsDialog";
+import { useAI } from "../hooks/useAI";
+import type { AIHabitSuggestion } from "../types";
 import {
   Plus,
   X,
@@ -15,10 +18,10 @@ import {
   Info,
   CheckSquare,
   Square,
-  MoreHorizontal,
   FolderOpen,
   Target,
   Archive,
+  Brain,
 } from "lucide-react";
 
 // 自定义时间选择器组件
@@ -220,6 +223,7 @@ const Management: React.FC = () => {
     useHabitStore();
   const { habits, addHabit, updateHabit, deleteHabit, updateHabitCategory } =
     useHabitStore();
+  const { aiEnabled } = useHabitStore();
   const [categoryName, setCategoryName] = useState("");
   const [editCategory, setEditCategory] = useState<{
     id: string;
@@ -250,6 +254,38 @@ const Management: React.FC = () => {
   const [habitReminderTimes, setHabitReminderTimes] = useState<string[]>([""]);
   const [focusedIndex, setFocusedIndex] = useState(0);
 
+  // AI 相关状态
+  const {
+    apiKey,
+    setApiKey,
+    isValidApiKey,
+    isGenerating,
+    error: aiError,
+    generateHabits,
+    clearError: clearAIError,
+  } = useAI();
+  const [aiDialogOpen, setAIDialogOpen] = useState(false);
+  const [currentGoalForAI, setCurrentGoalForAI] = useState<string>("");
+  const [aiHabits, setAIHabits] = useState<AIHabitSuggestion[] | null>(null);
+
+  // 目标筛选状态
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<
+    string | null
+  >(null);
+
+  // 处理目标点击筛选
+  const handleCategoryClick = (categoryId: string) => {
+    if (batchMode) return; // 批量模式下不处理筛选
+    setSelectedCategoryFilter(
+      selectedCategoryFilter === categoryId ? null : categoryId
+    );
+  };
+
+  // 获取筛选后的习惯列表
+  const filteredHabits = selectedCategoryFilter
+    ? habits.filter((habit) => habit.categoryId === selectedCategoryFilter)
+    : habits;
+
   // 快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -260,7 +296,7 @@ const Management: React.FC = () => {
           if (showBatchCategoryActions) {
             setSelectedCategories(new Set(categories.map((c) => c.id)));
           } else if (showBatchHabitActions) {
-            setSelectedHabits(new Set(habits.map((h) => h.id)));
+            setSelectedHabits(new Set(filteredHabits.map((h) => h.id)));
           }
         }
         // Delete 删除选中项
@@ -289,7 +325,7 @@ const Management: React.FC = () => {
     selectedCategories,
     selectedHabits,
     categories,
-    habits,
+    filteredHabits,
   ]);
 
   // 批量操作函数
@@ -335,7 +371,7 @@ const Management: React.FC = () => {
   };
 
   const selectAllHabits = () => {
-    setSelectedHabits(new Set(habits.map((h) => h.id)));
+    setSelectedHabits(new Set(filteredHabits.map((h) => h.id)));
     setShowBatchHabitActions(true);
   };
 
@@ -576,6 +612,66 @@ const Management: React.FC = () => {
     setHabitDialogOpen(true);
   };
 
+  // AI 相关处理函数
+  const handleGenerateAIHabits = async (goalName: string) => {
+    setCurrentGoalForAI(goalName);
+    clearAIError();
+    setAIDialogOpen(true);
+
+    try {
+      const result = await generateHabits(goalName);
+      if (result) {
+        setAIHabits(result.habits);
+      }
+    } catch (error) {
+      console.error("生成 AI 习惯失败:", error);
+    }
+  };
+
+  const handleRetryAIGeneration = async () => {
+    if (currentGoalForAI) {
+      clearAIError();
+      try {
+        const result = await generateHabits(currentGoalForAI);
+        if (result) {
+          setAIHabits(result.habits);
+        }
+      } catch (error) {
+        console.error("重试生成 AI 习惯失败:", error);
+      }
+    }
+  };
+
+  const handleAddAIHabits = async (selectedHabitNames: string[]) => {
+    const targetCategory = categories.find((c) => c.name === currentGoalForAI);
+    if (!targetCategory) {
+      alert("找不到目标分类，请重试");
+      return;
+    }
+
+    try {
+      for (const habitName of selectedHabitNames) {
+        await addHabit(targetCategory.id, habitName, "");
+      }
+
+      // 重置状态
+      setAIDialogOpen(false);
+      setCurrentGoalForAI("");
+      setAIHabits(null);
+      clearAIError();
+    } catch (error) {
+      console.error("添加 AI 习惯失败:", error);
+      alert("添加习惯时出错，请重试");
+    }
+  };
+
+  const handleCloseAIDialog = () => {
+    setAIDialogOpen(false);
+    setCurrentGoalForAI("");
+    setAIHabits(null);
+    clearAIError();
+  };
+
   return (
     <div className="space-y-8">
       {/* 目标 */}
@@ -652,19 +748,30 @@ const Management: React.FC = () => {
 
         {categories.length > 0 ? (
           <div className="space-y-3">
+            {!batchMode && (
+              <div className="text-sm text-gray-500 mb-4 flex items-center space-x-2">
+                <span>💡 点击目标卡片来筛选相关习惯</span>
+              </div>
+            )}
             {categories.map((category) => (
               <div
                 key={category.id}
-                className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
+                className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md cursor-pointer ${
                   batchMode && selectedCategories.has(category.id)
                     ? "border-[#FF5A5F] bg-pink-50"
+                    : selectedCategoryFilter === category.id
+                    ? "border-[#FF5A5F] bg-gradient-to-r from-pink-50 to-orange-50 shadow-md"
                     : "border-gray-200 hover:border-[#FF5A5F]"
                 }`}
+                onClick={() => handleCategoryClick(category.id)}
               >
                 <div className="flex items-center space-x-3">
                   {batchMode && (
                     <button
-                      onClick={() => toggleCategorySelection(category.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleCategorySelection(category.id);
+                      }}
                       className="flex-shrink-0"
                     >
                       {selectedCategories.has(category.id) ? (
@@ -674,15 +781,46 @@ const Management: React.FC = () => {
                       )}
                     </button>
                   )}
-                  <div className="w-3 h-3 rounded-full bg-[#FF5A5F]"></div>
-                  <span className="font-medium text-gray-800">
-                    {category.name}
-                  </span>
+                  <div
+                    className={`w-3 h-3 rounded-full ${
+                      selectedCategoryFilter === category.id
+                        ? "bg-orange-500"
+                        : "bg-[#FF5A5F]"
+                    }`}
+                  ></div>
+                  <div className="flex items-center space-x-2">
+                    <span className="font-medium text-gray-800">
+                      {category.name}
+                    </span>
+                    {selectedCategoryFilter === category.id && (
+                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                        已筛选
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {!batchMode && (
                   <div className="flex items-center space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    {aiEnabled && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleGenerateAIHabits(category.name);
+                        }}
+                        className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-purple-600 hover:bg-purple-50 rounded-md transition-colors duration-200"
+                        title="AI 生成习惯"
+                      >
+                        <Brain className="w-4 h-4" />
+                        <span className="text-xs sm:text-sm hidden sm:inline">
+                          AI生成
+                        </span>
+                      </button>
+                    )}
                     <button
-                      onClick={() => openEditCategoryDialog(category)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openEditCategoryDialog(category);
+                      }}
                       className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
                     >
                       <Edit2 className="w-4 h-4" />
@@ -691,7 +829,10 @@ const Management: React.FC = () => {
                       </span>
                     </button>
                     <button
-                      onClick={() => deleteCategory(category.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteCategory(category.id);
+                      }}
                       className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
                     >
                       <Trash2 className="w-4 h-4" />
@@ -898,6 +1039,22 @@ const Management: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
               习惯
             </h2>
+            {selectedCategoryFilter && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-500">筛选:</span>
+                <span className="bg-gradient-to-r from-orange-100 to-pink-100 text-orange-700 px-3 py-1 rounded-full text-sm font-medium">
+                  {categories.find((c) => c.id === selectedCategoryFilter)
+                    ?.name || "未知目标"}
+                </span>
+                <button
+                  onClick={() => setSelectedCategoryFilter(null)}
+                  className="text-gray-400 hover:text-gray-600 transition-colors"
+                  title="清除筛选"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
             {batchMode && selectedHabits.size > 0 && (
               <span className="bg-[#FF5A5F] text-white px-2 py-1 rounded-full text-sm">
                 已选择 {selectedHabits.size} 项
@@ -971,9 +1128,9 @@ const Management: React.FC = () => {
           </div>
         </div>
 
-        {habits.length > 0 ? (
+        {filteredHabits.length > 0 ? (
           <div className="space-y-3">
-            {habits.map((habit) => {
+            {filteredHabits.map((habit) => {
               const category = categories.find(
                 (c) => c.id === habit.categoryId
               );
@@ -1056,8 +1213,25 @@ const Management: React.FC = () => {
             <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
               <Target className="w-8 h-8 text-gray-400" />
             </div>
-            <p className="text-gray-500 text-lg mb-2">还没有创建习惯</p>
-            <p className="text-gray-400 text-sm">创建你的习惯来达成目标</p>
+            {selectedCategoryFilter ? (
+              <>
+                <p className="text-gray-500 text-lg mb-2">该目标下还没有习惯</p>
+                <p className="text-gray-400 text-sm">
+                  为这个目标创建一些习惯吧
+                </p>
+                <button
+                  onClick={() => setSelectedCategoryFilter(null)}
+                  className="mt-4 px-4 py-2 text-sm text-orange-600 hover:text-orange-700 border border-orange-200 hover:border-orange-300 rounded-lg transition-colors"
+                >
+                  查看所有习惯
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-gray-500 text-lg mb-2">还没有创建习惯</p>
+                <p className="text-gray-400 text-sm">创建你的习惯来达成目标</p>
+              </>
+            )}
           </div>
         )}
 
@@ -1372,6 +1546,21 @@ const Management: React.FC = () => {
             </button>
           </div>
         </EnhancedDialog>
+
+        {/* AI 习惯生成对话框 */}
+        <AIHabitsDialog
+          open={aiDialogOpen}
+          onOpenChange={handleCloseAIDialog}
+          goalName={currentGoalForAI}
+          habits={aiHabits}
+          isGenerating={isGenerating}
+          error={aiError}
+          onAddHabits={handleAddAIHabits}
+          onRetry={handleRetryAIGeneration}
+          apiKey={apiKey}
+          onApiKeyChange={setApiKey}
+          isValidApiKey={isValidApiKey}
+        />
       </div>
     </div>
   );
