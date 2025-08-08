@@ -10,6 +10,14 @@
     "@ai-sdk/provider" "2.0.0"
     "@ai-sdk/provider-utils" "3.0.1"
 
+"@ai-sdk/google@^2.0.3":
+  version "2.0.3"
+  resolved "https://registry.npmjs.org/@ai-sdk/google/-/google-2.0.3.tgz"
+  integrity sha512-rQkY4nQGZnQw6pfftqsGsXXAqkGnl1gYjSbvD8+zyrVg2KAYeJU0NxIaacLWCORNcW+yQ/cqTpK/Uku/SIdEqA==
+  dependencies:
+    "@ai-sdk/provider" "2.0.0"
+    "@ai-sdk/provider-utils" "3.0.1"
+
 "@ai-sdk/openai@^2.0.4":
   version "2.0.4"
   resolved "https://registry.npmjs.org/@ai-sdk/openai/-/openai-2.0.4.tgz"

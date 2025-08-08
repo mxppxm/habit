@@ -9,9 +9,6 @@ import {
   Clock,
   Target,
   AlertCircle,
-  Settings,
-  Eye,
-  EyeOff,
 } from "lucide-react";
 import { EnhancedDialog } from "./EnhancedDialog";
 import type { AIHabitSuggestion } from "../../types";
@@ -25,9 +22,6 @@ interface AIHabitsDialogProps {
   error: string | null;
   onAddHabits: (selectedHabits: string[]) => void;
   onRetry: () => void;
-  apiKey: string;
-  onApiKeyChange: (key: string) => void;
-  isValidApiKey: boolean;
 }
 
 export const AIHabitsDialog: React.FC<AIHabitsDialogProps> = ({
@@ -39,20 +33,13 @@ export const AIHabitsDialog: React.FC<AIHabitsDialogProps> = ({
   error,
   onAddHabits,
   onRetry,
-  apiKey,
-  onApiKeyChange,
-  isValidApiKey,
 }) => {
   const [selectedHabits, setSelectedHabits] = useState<Set<string>>(new Set());
-  const [showApiKeySettings, setShowApiKeySettings] = useState(false);
-  const [showApiKey, setShowApiKey] = useState(false);
 
   // 重置选中状态当对话框关闭时
   useEffect(() => {
     if (!open) {
       setSelectedHabits(new Set());
-      setShowApiKeySettings(false);
-      setShowApiKey(false);
     }
   }, [open]);
 
@@ -116,15 +103,6 @@ export const AIHabitsDialog: React.FC<AIHabitsDialogProps> = ({
           </div>
         </div>
         <div className="flex items-center space-x-2">
-          {!isValidApiKey && (
-            <button
-              onClick={() => setShowApiKeySettings(!showApiKeySettings)}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              title="API 设置"
-            >
-              <Settings className="w-5 h-5" />
-            </button>
-          )}
           <Dialog.Close asChild>
             <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
               <X className="w-5 h-5 text-gray-500" />
@@ -132,49 +110,6 @@ export const AIHabitsDialog: React.FC<AIHabitsDialogProps> = ({
           </Dialog.Close>
         </div>
       </div>
-
-      {/* API Key 设置区域 */}
-      {showApiKeySettings && (
-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-          <div className="flex items-center justify-between mb-3">
-            <h4 className="text-sm font-medium text-blue-800">
-              OpenAI API 设置
-            </h4>
-            <div className="flex items-center space-x-2">
-              <span className="text-xs text-blue-600">
-                {isValidApiKey ? "✓ 已配置" : "⚠ 未配置"}
-              </span>
-            </div>
-          </div>
-          <div className="space-y-3">
-            <div className="relative">
-              <input
-                type={showApiKey ? "text" : "password"}
-                value={apiKey}
-                onChange={(e) => onApiKeyChange(e.target.value)}
-                placeholder="输入 OpenAI API Key (sk-...)"
-                className="w-full px-3 py-2 pr-10 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
-              />
-              <button
-                type="button"
-                onClick={() => setShowApiKey(!showApiKey)}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
-              >
-                {showApiKey ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
-              </button>
-            </div>
-            <p className="text-xs text-blue-600">
-              {isValidApiKey
-                ? "API Key 有效，将使用 AI 生成个性化建议"
-                : "未配置 API Key，将使用通用示例"}
-            </p>
-          </div>
-        </div>
-      )}
 
       {/* 加载状态 */}
       {isGenerating && (

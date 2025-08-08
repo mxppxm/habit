@@ -7,8 +7,6 @@ import {
 import type { AIHabitsResponse } from "../types";
 
 interface UseAIResult {
-  apiKey: string;
-  setApiKey: (key: string) => void;
   isValidApiKey: boolean;
   isGenerating: boolean;
   error: string | null;
@@ -16,25 +14,9 @@ interface UseAIResult {
   clearError: () => void;
 }
 
-export function useAI(): UseAIResult {
-  const [apiKey, setApiKeyState] = useState<string>(() => {
-    // 从 localStorage 获取已保存的 API Key
-    return localStorage.getItem("openai_api_key") || "";
-  });
-
+export function useAI(apiKey: string): UseAIResult {
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const setApiKey = useCallback((key: string) => {
-    setApiKeyState(key);
-    // 保存到 localStorage
-    if (key) {
-      localStorage.setItem("openai_api_key", key);
-    } else {
-      localStorage.removeItem("openai_api_key");
-    }
-    setError(null);
-  }, []);
 
   const isValidApiKey = validateApiKey(apiKey);
 
@@ -82,8 +64,6 @@ export function useAI(): UseAIResult {
   }, []);
 
   return {
-    apiKey,
-    setApiKey,
     isValidApiKey,
     isGenerating,
     error,

@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHabitStore } from "../stores/useHabitStore";
+import { validateApiKey } from "../services/aiService";
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
@@ -13,6 +14,10 @@ import {
   Loader2,
   Brain,
   Zap,
+  Key,
+  Eye,
+  EyeOff,
+  Save,
 } from "lucide-react";
 
 // 自定义文件上传组件
@@ -42,7 +47,7 @@ const FileUpload: React.FC<{
 };
 
 const Settings: React.FC = () => {
-  const { clearAll, aiEnabled, setAIEnabled } = useHabitStore();
+  const { clearAll, aiEnabled, setAIEnabled, apiKey, setApiKey } = useHabitStore();
   const navigate = useNavigate();
   const [exportData, setExportData] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -50,6 +55,9 @@ const Settings: React.FC = () => {
   const [clearSuccess, setClearSuccess] = useState(false);
   const [importLoading, setImportLoading] = useState(false);
   const [importSuccess, setImportSuccess] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState(apiKey);
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [apiKeySaved, setApiKeySaved] = useState(false);
 
   // 移除了导出数据的快捷键功能
 
@@ -262,24 +270,104 @@ const Settings: React.FC = () => {
           </div>
 
           {aiEnabled && (
-            <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-              <div className="flex items-start space-x-3">
-                <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <Zap className="w-3 h-3 text-purple-600" />
-                </div>
-                <div className="space-y-2">
-                  <h4 className="text-sm font-medium text-purple-800">
-                    AI 功能已启用
-                  </h4>
-                  <ul className="text-sm text-purple-700 space-y-1">
-                    <li>• 在管理页面的目标卡片上会显示"🧠 AI生成"按钮</li>
-                    <li>• 点击后可根据目标生成10个个性化习惯建议</li>
-                    <li>• 支持配置 OpenAI API Key 获得更个性化的建议</li>
-                    <li>• 未配置 API Key 时会使用通用示例</li>
-                  </ul>
+            <>
+              <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
+                <div className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-purple-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Zap className="w-3 h-3 text-purple-600" />
+                  </div>
+                  <div className="space-y-2">
+                    <h4 className="text-sm font-medium text-purple-800">
+                      AI 功能已启用
+                    </h4>
+                    <ul className="text-sm text-purple-700 space-y-1">
+                      <li>• 在管理页面的目标卡片上会显示"🧠 AI生成"按钮</li>
+                      <li>• 点击后可根据目标生成10个个性化习惯建议</li>
+                      <li>• 支持配置 Google Gemini API Key 获得更个性化的建议</li>
+                      <li>• 未配置 API Key 时会使用通用示例</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* API Key 配置 */}
+              <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-start space-x-3 mb-4">
+                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <Key className="w-3 h-3 text-blue-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className="text-sm font-medium text-blue-800">
+                      Google Gemini API 配置
+                    </h4>
+                    <p className="text-xs text-blue-600 mt-1">
+                      {apiKey ? "已配置 API Key" : "未配置 API Key，将使用通用示例"}
+                    </p>
+                  </div>
+                </div>
+                <div className="space-y-3">
+                  <div className="relative">
+                    <input
+                      type={showApiKey ? "text" : "password"}
+                      value={tempApiKey}
+                      onChange={(e) => {
+                        setTempApiKey(e.target.value);
+                        setApiKeySaved(false);
+                      }}
+                      placeholder="输入 Google Gemini API Key (AIza...)"
+                      className="w-full px-3 py-2 pr-10 border border-blue-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <p className="text-xs text-blue-600">
+                      {tempApiKey && validateApiKey(tempApiKey)
+                        ? "✓ API Key 格式正确"
+                        : tempApiKey
+                        ? "⚠ API Key 格式不正确"
+                        : "请输入您的 API Key"}
+                    </p>
+                    <button
+                      onClick={() => {
+                        setApiKey(tempApiKey);
+                        setApiKeySaved(true);
+                        setTimeout(() => setApiKeySaved(false), 2000);
+                      }}
+                      disabled={!tempApiKey || tempApiKey === apiKey}
+                      className={`inline-flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        apiKeySaved
+                          ? "bg-green-500 text-white"
+                          : !tempApiKey || tempApiKey === apiKey
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 text-white hover:bg-blue-600"
+                      }`}
+                    >
+                      {apiKeySaved ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          <span>已保存</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3 h-3" />
+                          <span>保存</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </>
           )}
 
           {!aiEnabled && (

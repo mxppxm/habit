@@ -1,4 +1,4 @@
-import { createOpenAI } from "@ai-sdk/openai";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { streamObject } from "ai";
 import { z } from "zod";
 import type { AIHabitsResponse } from "../types";
@@ -19,7 +19,7 @@ export const habitsSchema = z.object({
 /**
  * 生成习惯建议的函数
  * @param goalName 目标名称
- * @param apiKey OpenAI API Key
+ * @param apiKey Google Gemini API Key
  * @returns Promise<AIHabitsResponse>
  */
 export async function generateHabitsForGoal(
@@ -27,9 +27,9 @@ export async function generateHabitsForGoal(
   apiKey: string
 ): Promise<AIHabitsResponse> {
   try {
-    const openai = createOpenAI({ apiKey });
+    const google = createGoogleGenerativeAI({ apiKey });
     const result = await streamObject({
-      model: openai("gpt-4o"),
+      model: google("gemini-2.0-flash-exp"),
       schema: habitsSchema,
       prompt: `
         作为一个习惯养成专家，请为目标"${goalName}"生成10个有效的习惯建议。
@@ -95,8 +95,13 @@ export function validateApiKey(apiKey: string): boolean {
     return false;
   }
 
-  // OpenAI API key format: sk-...
-  if (apiKey.startsWith("sk-") && apiKey.length > 20) {
+  // Google Gemini API key format: AIza...
+  if (apiKey.startsWith("AIza") && apiKey.length === 39) {
+    return true;
+  }
+
+  // Also accept other formats (for flexibility)
+  if (apiKey.length > 20) {
     return true;
   }
 

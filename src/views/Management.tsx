@@ -223,7 +223,7 @@ const Management: React.FC = () => {
     useHabitStore();
   const { habits, addHabit, updateHabit, deleteHabit, updateHabitCategory } =
     useHabitStore();
-  const { aiEnabled } = useHabitStore();
+  const { aiEnabled, apiKey } = useHabitStore();
   const [categoryName, setCategoryName] = useState("");
   const [editCategory, setEditCategory] = useState<{
     id: string;
@@ -256,14 +256,11 @@ const Management: React.FC = () => {
 
   // AI 相关状态
   const {
-    apiKey,
-    setApiKey,
-    isValidApiKey,
     isGenerating,
     error: aiError,
     generateHabits,
     clearError: clearAIError,
-  } = useAI();
+  } = useAI(apiKey);
   const [aiDialogOpen, setAIDialogOpen] = useState(false);
   const [currentGoalForAI, setCurrentGoalForAI] = useState<string>("");
   const [aiHabits, setAIHabits] = useState<AIHabitSuggestion[] | null>(null);
@@ -1557,9 +1554,6 @@ const Management: React.FC = () => {
           error={aiError}
           onAddHabits={handleAddAIHabits}
           onRetry={handleRetryAIGeneration}
-          apiKey={apiKey}
-          onApiKeyChange={setApiKey}
-          isValidApiKey={isValidApiKey}
         />
       </div>
     </div>

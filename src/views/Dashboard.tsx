@@ -7,7 +7,7 @@ import {
 } from "../hooks/useKeyboardShortcuts";
 import { EnhancedDialog } from "../components/ui/EnhancedDialog";
 import * as Dialog from "@radix-ui/react-dialog";
-import { Plus, X, Target, Info } from "lucide-react";
+import { Plus, X, Target, Info, Sparkles, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
 
@@ -23,6 +23,7 @@ const Dashboard: React.FC = () => {
     deleteHabitLog,
     init,
     loading,
+    aiEnabled,
   } = useHabitStore();
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
   const [note, setNote] = useState("");
@@ -131,17 +132,24 @@ const Dashboard: React.FC = () => {
     );
   }
 
+  // 计算没有习惯的目标数量
+  const categoriesWithoutHabits = categories.filter(
+    (category) => !habits.some((habit) => habit.categoryId === category.id)
+  );
+
   return (
     <div className="space-y-6">
-      {categories.length > 0 ? (
-        categories.map((category) => {
-          const categoryHabits = habits.filter(
-            (habit) => habit.categoryId === category.id
-          );
+      {/* 显示有习惯的目标 */}
+      {categories.length > 0 && (
+        <>
+          {categories.map((category) => {
+            const categoryHabits = habits.filter(
+              (habit) => habit.categoryId === category.id
+            );
 
-          if (categoryHabits.length === 0) return null;
+            if (categoryHabits.length === 0) return null;
 
-          return (
+            return (
             <div key={category.id} className="card p-4 sm:p-8">
               <div className="flex items-center space-x-3 mb-4 sm:mb-6">
                 <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#FF5A5F]"></div>
@@ -407,8 +415,81 @@ const Dashboard: React.FC = () => {
               </div>
             </div>
           );
-        })
-      ) : (
+        })}
+
+        {/* 显示没有习惯的目标提示 */}
+        {categoriesWithoutHabits.length > 0 && (
+          <div className="card p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-gray-100">
+            <div className="flex items-center space-x-3 mb-6">
+              <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+                  待添加习惯的目标
+                </h2>
+                <p className="text-sm sm:text-base text-gray-500">
+                  您有 {categoriesWithoutHabits.length} 个目标还没有添加习惯
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {categoriesWithoutHabits.map((category) => (
+                <div
+                  key={category.id}
+                  className="p-4 bg-white rounded-xl border-2 border-dashed border-gray-300 hover:border-amber-400 transition-all duration-200"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-medium text-gray-800">
+                      {category.name}
+                    </h3>
+                    <Target className="w-5 h-5 text-gray-400" />
+                  </div>
+                  <p className="text-sm text-gray-500 mb-4">
+                    还没有习惯，点击添加
+                  </p>
+                  <div className="flex space-x-2">
+                    <button
+                      onClick={() => navigate("/management")}
+                      className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>添加习惯</span>
+                    </button>
+                    {aiEnabled && (
+                      <button
+                        onClick={() => navigate("/management")}
+                        className="inline-flex items-center justify-center px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-colors"
+                        title="AI 生成习惯"
+                      >
+                        <Brain className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+              <div className="flex items-start space-x-2">
+                <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div className="text-sm text-amber-700">
+                  <p className="font-medium mb-1">小贴士：</p>
+                  <p>
+                    每个目标可以添加多个习惯，建议从简单的开始，逐步养成。
+                    {aiEnabled && " 您也可以使用 AI 生成个性化的习惯建议。"}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
+      )}
+
+      {/* 完全没有目标的情况 */}
+      {categories.length === 0 && (
         <div className="text-center py-12 sm:py-16">
           <div className="max-w-md mx-auto px-4">
             <div className="w-20 h-20 sm:w-24 sm:h-24 mx-auto mb-6 bg-gradient-to-br from-[#FF5A5F] to-pink-400 rounded-full flex items-center justify-center shadow-lg">

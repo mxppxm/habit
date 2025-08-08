@@ -19,6 +19,7 @@ interface HabitStore {
   loading: boolean;
   error: string | null;
   aiEnabled: boolean;
+  apiKey: string;
   init: () => Promise<void>;
   addCategory: (name: string) => Promise<void>;
   insertCategory: (category: Category) => Promise<void>;
@@ -42,6 +43,7 @@ interface HabitStore {
   updateHabitLog: (logId: string, note: string) => Promise<void>;
   updateUserName: (name: string) => void;
   setAIEnabled: (enabled: boolean) => void;
+  setApiKey: (key: string) => void;
   clearAll: () => Promise<void>;
 }
 
@@ -55,6 +57,7 @@ export const useHabitStore = create<HabitStore>()(
       loading: false,
       error: null,
       aiEnabled: false,
+      apiKey: "",
       init: async () => {
         try {
           set({ loading: true });
@@ -215,6 +218,9 @@ export const useHabitStore = create<HabitStore>()(
       setAIEnabled: (enabled) => {
         set({ aiEnabled: enabled });
       },
+      setApiKey: (key) => {
+        set({ apiKey: key });
+      },
       clearAll: async () => {
         try {
           await clearAllData();
@@ -224,6 +230,7 @@ export const useHabitStore = create<HabitStore>()(
             habitLogs: [],
             userName: "亲爱的朋友", // 重置用户名为默认值
             aiEnabled: false, // 重置AI功能为默认值
+            apiKey: "", // 重置API Key
           });
         } catch (error: any) {
           set({ error: error.message });
@@ -236,6 +243,7 @@ export const useHabitStore = create<HabitStore>()(
       partialize: (state) => ({
         userName: state.userName,
         aiEnabled: state.aiEnabled,
+        apiKey: state.apiKey,
       }),
     }
   )
