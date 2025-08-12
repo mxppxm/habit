@@ -10,6 +10,7 @@ import {
   deleteData,
   clearAllData,
 } from "../services/db";
+import { syncService } from "../services/syncService";
 
 interface HabitStore {
   categories: Category[];
@@ -20,6 +21,14 @@ interface HabitStore {
   error: string | null;
   aiEnabled: boolean;
   apiKey: string;
+  // 同步相关状态
+  syncEnabled: boolean;
+  syncUserId: string;
+  lastSyncTime: number;
+  isSyncing: boolean;
+  syncError: string | null;
+  isOnline: boolean;
+
   init: () => Promise<void>;
   addCategory: (name: string) => Promise<void>;
   insertCategory: (category: Category) => Promise<void>;
@@ -45,11 +54,21 @@ interface HabitStore {
   setAIEnabled: (enabled: boolean) => void;
   setApiKey: (key: string) => void;
   clearAll: () => Promise<void>;
+
+  // 同步相关方法
+  setSyncEnabled: (enabled: boolean) => void;
+  setSyncUserId: (userId: string) => void;
+  syncToCloud: () => Promise<void>;
+  syncFromCloud: () => Promise<void>;
+  enableAutoSync: () => void;
+  disableAutoSync: () => void;
 }
+
+let autoSyncUnsubscribe: (() => void) | null = null;
 
 export const useHabitStore = create<HabitStore>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       categories: [],
       habits: [],
       habitLogs: [],
@@ -58,6 +77,13 @@ export const useHabitStore = create<HabitStore>()(
       error: null,
       aiEnabled: false,
       apiKey: "",
+      // 同步相关初始状态
+      syncEnabled: false,
+      syncUserId: "",
+      lastSyncTime: 0,
+      isSyncing: false,
+      syncError: null,
+      isOnline: navigator.onLine,
       init: async () => {
         try {
           set({ loading: true });
@@ -236,6 +262,140 @@ export const useHabitStore = create<HabitStore>()(
           set({ error: error.message });
         }
       },
+
+      // 同步相关方法实现
+      setSyncEnabled: (enabled: boolean) => {
+        set({ syncEnabled: enabled });
+        if (enabled && get().syncUserId) {
+          get().enableAutoSync();
+        } else {
+          get().disableAutoSync();
+        }
+      },
+
+      setSyncUserId: (userId: string) => {
+        set({ syncUserId: userId });
+        syncService.setUserId(userId);
+        if (get().syncEnabled && userId) {
+          get().enableAutoSync();
+        }
+      },
+
+      syncToCloud: async () => {
+        const state = get();
+        if (!state.syncEnabled || !state.syncUserId) {
+          throw new Error("同步功能未启用或用户ID未设置");
+        }
+
+        try {
+          set({ isSyncing: true, syncError: null });
+
+          await syncService.fullSyncUp({
+            categories: state.categories,
+            habits: state.habits,
+            habitLogs: state.habitLogs,
+          });
+
+          set({
+            lastSyncTime: Date.now(),
+            isSyncing: false,
+          });
+        } catch (error: any) {
+          set({
+            syncError: error.message,
+            isSyncing: false,
+          });
+          throw error;
+        }
+      },
+
+      syncFromCloud: async () => {
+        const state = get();
+        if (!state.syncEnabled || !state.syncUserId) {
+          throw new Error("同步功能未启用或用户ID未设置");
+        }
+
+        try {
+          set({ isSyncing: true, syncError: null });
+
+          const cloudData = await syncService.fullSyncDown();
+
+          // 清空本地数据库
+          await clearAllData();
+
+          // 保存云端数据到本地
+          const promises = [
+            ...cloudData.categories.map((category) =>
+              addData("categories", category)
+            ),
+            ...cloudData.habits.map((habit) => addData("habits", habit)),
+            ...cloudData.habitLogs.map((log) => addData("habitLogs", log)),
+          ];
+
+          await Promise.all(promises);
+
+          // 更新状态
+          set({
+            categories: cloudData.categories,
+            habits: cloudData.habits,
+            habitLogs: cloudData.habitLogs,
+            lastSyncTime: Date.now(),
+            isSyncing: false,
+          });
+        } catch (error: any) {
+          set({
+            syncError: error.message,
+            isSyncing: false,
+          });
+          throw error;
+        }
+      },
+
+      enableAutoSync: () => {
+        const state = get();
+        if (!state.syncEnabled || !state.syncUserId || autoSyncUnsubscribe) {
+          return;
+        }
+
+        // 监听网络状态变化
+        const handleOnline = () => set({ isOnline: true });
+        const handleOffline = () => set({ isOnline: false });
+
+        window.addEventListener("online", handleOnline);
+        window.addEventListener("offline", handleOffline);
+
+        // 订阅云端数据变化
+        autoSyncUnsubscribe = syncService.subscribeToChanges(
+          (categories) => {
+            // 更新本地数据库
+            categories.forEach((category) => putData("categories", category));
+            set({ categories });
+          },
+          (habits) => {
+            habits.forEach((habit) => putData("habits", habit));
+            set({ habits });
+          },
+          (habitLogs) => {
+            habitLogs.forEach((log) => putData("habitLogs", log));
+            set({ habitLogs });
+          }
+        );
+
+        // 组合清理函数
+        const originalUnsubscribe = autoSyncUnsubscribe;
+        autoSyncUnsubscribe = () => {
+          window.removeEventListener("online", handleOnline);
+          window.removeEventListener("offline", handleOffline);
+          originalUnsubscribe();
+        };
+      },
+
+      disableAutoSync: () => {
+        if (autoSyncUnsubscribe) {
+          autoSyncUnsubscribe();
+          autoSyncUnsubscribe = null;
+        }
+      },
     }),
     {
       name: "habit-store",
@@ -244,6 +404,9 @@ export const useHabitStore = create<HabitStore>()(
         userName: state.userName,
         aiEnabled: state.aiEnabled,
         apiKey: state.apiKey,
+        syncEnabled: state.syncEnabled,
+        syncUserId: state.syncUserId,
+        lastSyncTime: state.lastSyncTime,
       }),
     }
   )

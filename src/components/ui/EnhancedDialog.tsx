@@ -69,3 +69,14 @@ export const EnhancedDialog: React.FC<EnhancedDialogProps> = ({
 
 // 导出原始的Dialog组件以备需要
 export { Dialog };
+
+// 导出常用的Dialog子组件
+export const DialogContent = Dialog.Content;
+export const DialogHeader: React.FC<{
+  children: React.ReactNode;
+  className?: string;
+}> = ({ children, className = "mb-6" }) => (
+  <div className={className}>{children}</div>
+);
+
+export const DialogTitle = Dialog.Title;

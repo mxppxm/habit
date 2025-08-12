@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useHabitStore } from "../stores/useHabitStore";
 import { validateApiKey } from "../services/aiService";
+import { SyncSettingsDialog } from "../components/ui/SyncSettingsDialog";
 
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
@@ -18,6 +19,7 @@ import {
   Eye,
   EyeOff,
   Save,
+  Cloud,
 } from "lucide-react";
 
 // 自定义文件上传组件
@@ -47,7 +49,8 @@ const FileUpload: React.FC<{
 };
 
 const Settings: React.FC = () => {
-  const { clearAll, aiEnabled, setAIEnabled, apiKey, setApiKey } = useHabitStore();
+  const { clearAll, aiEnabled, setAIEnabled, apiKey, setApiKey } =
+    useHabitStore();
   const navigate = useNavigate();
   const [exportData, setExportData] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -58,6 +61,7 @@ const Settings: React.FC = () => {
   const [tempApiKey, setTempApiKey] = useState(apiKey);
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [syncDialogOpen, setSyncDialogOpen] = useState(false);
 
   // 移除了导出数据的快捷键功能
 
@@ -227,6 +231,31 @@ const Settings: React.FC = () => {
           </div>
         </div>
       </div>
+      {/* 多端同步设置 */}
+      <div className="card p-6 sm:p-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-cyan-600 rounded-2xl flex items-center justify-center">
+            <Cloud className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+          </div>
+          <div>
+            <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
+              多端同步
+            </h2>
+            <p className="text-sm sm:text-base text-gray-500">
+              在多个设备间实时同步您的习惯数据
+            </p>
+          </div>
+        </div>
+
+        <button
+          onClick={() => setSyncDialogOpen(true)}
+          className="inline-flex items-center space-x-2 px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-all duration-200 shadow-md hover:shadow-lg font-medium"
+        >
+          <Cloud className="w-5 h-5" />
+          <span>同步设置</span>
+        </button>
+      </div>
+
       {/* AI 功能设置 */}
       <div className="card p-6 sm:p-8">
         <div className="flex items-center space-x-3 mb-6">
@@ -283,7 +312,9 @@ const Settings: React.FC = () => {
                     <ul className="text-sm text-purple-700 space-y-1">
                       <li>• 在管理页面的目标卡片上会显示"🧠 AI生成"按钮</li>
                       <li>• 点击后可根据目标生成10个个性化习惯建议</li>
-                      <li>• 支持配置 Google Gemini API Key 获得更个性化的建议</li>
+                      <li>
+                        • 支持配置 Google Gemini API Key 获得更个性化的建议
+                      </li>
                       <li>• 未配置 API Key 时会使用通用示例</li>
                     </ul>
                   </div>
@@ -301,7 +332,9 @@ const Settings: React.FC = () => {
                       Google Gemini API 配置
                     </h4>
                     <p className="text-xs text-blue-600 mt-1">
-                      {apiKey ? "已配置 API Key" : "未配置 API Key，将使用通用示例"}
+                      {apiKey
+                        ? "已配置 API Key"
+                        : "未配置 API Key，将使用通用示例"}
                     </p>
                   </div>
                 </div>
@@ -612,6 +645,12 @@ const Settings: React.FC = () => {
           </AlertDialog.Portal>
         </AlertDialog.Root>
       </div>
+
+      {/* 同步设置对话框 */}
+      <SyncSettingsDialog
+        open={syncDialogOpen}
+        onOpenChange={setSyncDialogOpen}
+      />
     </div>
   );
 };
