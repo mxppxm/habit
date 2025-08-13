@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useHabitStore } from "../stores/useHabitStore";
 import { useNotification } from "../hooks/useNotification";
 import { formatShortcut } from "../hooks/useKeyboardShortcuts";

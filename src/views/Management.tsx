@@ -223,7 +223,7 @@ const Management: React.FC = () => {
     useHabitStore();
   const { habits, addHabit, updateHabit, deleteHabit, updateHabitCategory } =
     useHabitStore();
-  const { aiEnabled, apiKey, habitLogs, loading } = useHabitStore();
+  const { aiEnabled, apiKey, habitLogs } = useHabitStore();
   const [categoryName, setCategoryName] = useState("");
   const [editCategory, setEditCategory] = useState<{
     id: string;

@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React from "react";
 import { useHabitStore } from "../stores/useHabitStore";
 import {
   LineChart,
