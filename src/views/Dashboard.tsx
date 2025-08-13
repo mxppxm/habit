@@ -1,10 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { useHabitStore } from "../stores/useHabitStore";
 import { useNotification } from "../hooks/useNotification";
-import {
-  useKeyboardShortcuts,
-  formatShortcut,
-} from "../hooks/useKeyboardShortcuts";
+import { formatShortcut } from "../hooks/useKeyboardShortcuts";
 import { EnhancedDialog } from "../components/ui/EnhancedDialog";
 import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, X, Target, Info, Sparkles, Brain } from "lucide-react";
@@ -38,19 +35,7 @@ const Dashboard: React.FC = () => {
     init();
   }, [init]);
 
-  // 键盘快捷键
-  useKeyboardShortcuts([
-    {
-      key: "Enter",
-      handler: () => {
-        // 如果有选中的习惯，直接执行打卡
-        if (selectedHabitId) {
-          handleCheckin();
-        }
-      },
-      enabled: !!selectedHabitId,
-    },
-  ]);
+  // 注意：快捷键由 EnhancedDialog 组件处理，这里不需要重复监听
 
   /**
    * 处理打卡
@@ -345,7 +330,7 @@ const Dashboard: React.FC = () => {
               onConfirm={handleCheckin}
               confirmDisabled={!selectedHabitId}
               className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-lg mx-4 shadow-2xl z-50 max-h-[90vh] overflow-y-auto"
-              confirmShortcut={{ key: "Enter" }}
+              confirmShortcut={{ key: "Enter", ctrlKey: true, metaKey: true }}
             >
               <div className="flex items-center justify-between mb-6">
                 <Dialog.Title className="text-xl sm:text-2xl font-semibold text-gray-800 leading-tight">
@@ -434,6 +419,8 @@ const Dashboard: React.FC = () => {
                         <span className="text-xs text-pink-200 ml-2 opacity-70">
                           {formatShortcut({
                             key: "Enter",
+                            ctrlKey: true,
+                            metaKey: true,
                           })}
                         </span>
                       </button>
@@ -475,6 +462,8 @@ const Dashboard: React.FC = () => {
                       <span className="text-xs text-pink-200 ml-2 opacity-70">
                         {formatShortcut({
                           key: "Enter",
+                          ctrlKey: true,
+                          metaKey: true,
                         })}
                       </span>
                     </button>

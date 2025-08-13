@@ -223,7 +223,7 @@ const Management: React.FC = () => {
     useHabitStore();
   const { habits, addHabit, updateHabit, deleteHabit, updateHabitCategory } =
     useHabitStore();
-  const { aiEnabled, apiKey } = useHabitStore();
+  const { aiEnabled, apiKey, habitLogs, init, loading } = useHabitStore();
   const [categoryName, setCategoryName] = useState("");
   const [editCategory, setEditCategory] = useState<{
     id: string;
@@ -282,6 +282,11 @@ const Management: React.FC = () => {
   const filteredHabits = selectedCategoryFilter
     ? habits.filter((habit) => habit.categoryId === selectedCategoryFilter)
     : habits;
+
+  // 初始化数据
+  useEffect(() => {
+    init();
+  }, [init]);
 
   // 快捷键处理
   useEffect(() => {
@@ -595,8 +600,10 @@ const Management: React.FC = () => {
     setHabitInputs([""]);
     setHabitReminderTimes([""]);
     setFocusedIndex(0);
-    // 默认选择第一个目标
-    setSelectedCategory(categories.length > 0 ? categories[0].id : "");
+    // 如果有筛选的目标，默认选择筛选的目标；否则选择第一个目标
+    const defaultCategory =
+      selectedCategoryFilter || (categories.length > 0 ? categories[0].id : "");
+    setSelectedCategory(defaultCategory);
     setReminderTime("");
     setHabitDialogOpen(true);
   };
@@ -688,13 +695,15 @@ const Management: React.FC = () => {
           <div className="flex items-center space-x-2">
             {!batchMode ? (
               <>
-                <button
-                  onClick={enterBatchMode}
-                  className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
-                >
-                  <CheckSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">批量选择</span>
-                </button>
+                {categories.length > 0 && (
+                  <button
+                    onClick={enterBatchMode}
+                    className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    <span className="hidden sm:inline">批量选择</span>
+                  </button>
+                )}
                 <button
                   onClick={openAddCategoryDialog}
                   className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
@@ -785,15 +794,24 @@ const Management: React.FC = () => {
                         : "bg-[#FF5A5F]"
                     }`}
                   ></div>
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium text-gray-800">
-                      {category.name}
-                    </span>
-                    {selectedCategoryFilter === category.id && (
-                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                        已筛选
+                  <div className="flex flex-col space-y-1">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium text-gray-800">
+                        {category.name}
                       </span>
-                    )}
+                      {selectedCategoryFilter === category.id && (
+                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                          已筛选
+                        </span>
+                      )}
+                    </div>
+                    <span className="text-xs text-gray-500">
+                      {
+                        habits.filter((h) => h.categoryId === category.id)
+                          .length
+                      }{" "}
+                      个习惯
+                    </span>
                   </div>
                 </div>
                 {!batchMode && (
@@ -1061,13 +1079,15 @@ const Management: React.FC = () => {
           <div className="flex items-center space-x-2">
             {!batchMode ? (
               <>
-                <button
-                  onClick={enterBatchMode}
-                  className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
-                >
-                  <CheckSquare className="w-4 h-4" />
-                  <span className="hidden sm:inline">批量选择</span>
-                </button>
+                {filteredHabits.length > 0 && (
+                  <button
+                    onClick={enterBatchMode}
+                    className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
+                  >
+                    <CheckSquare className="w-4 h-4" />
+                    <span className="hidden sm:inline">批量选择</span>
+                  </button>
+                )}
                 <button
                   onClick={openAddHabitDialog}
                   className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
@@ -1164,9 +1184,25 @@ const Management: React.FC = () => {
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500">
-                        <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
-                        <span>提醒时间：{habit.reminderTime || "未设置"}</span>
+                      <div className="flex flex-col space-y-1">
+                        {habit.reminderTime && (
+                          <div className="flex items-center space-x-1 text-xs sm:text-sm text-gray-500">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
+                            <span>提醒时间：{habit.reminderTime}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center space-x-1 text-xs text-gray-500">
+                          <CheckSquare className="w-3 h-3" />
+                          <span>
+                            已打卡：
+                            {
+                              habitLogs.filter(
+                                (log) => log.habitId === habit.id
+                              ).length
+                            }{" "}
+                            次
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useHabitStore } from "../stores/useHabitStore";
 import {
   LineChart,
@@ -12,7 +12,12 @@ import {
 import dayjs from "dayjs";
 
 const Statistics: React.FC = () => {
-  const { habitLogs } = useHabitStore();
+  const { habitLogs, init } = useHabitStore();
+
+  // 初始化数据
+  useEffect(() => {
+    init();
+  }, [init]);
 
   // 生成最近7天的日期数组
   const lastSevenDays = Array.from({ length: 7 }, (_, i) =>

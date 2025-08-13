@@ -29,6 +29,7 @@ const HabitDetail: React.FC = () => {
     checkinHabit,
     deleteHabitLog,
     updateHabitLog,
+    init,
   } = useHabitStore();
 
   const [editingLog, setEditingLog] = useState<string | null>(null);
@@ -44,6 +45,11 @@ const HabitDetail: React.FC = () => {
     ? categories.find((c) => c.id === habit.categoryId)
     : null;
   const logs = habitLogs.filter((log) => log.habitId === habitId);
+
+  // 初始化数据
+  useEffect(() => {
+    init();
+  }, [init]);
 
   useEffect(() => {
     if (!habit) {
@@ -216,13 +222,17 @@ const HabitDetail: React.FC = () => {
               </span>
             )}
           </div>
-          <div className="flex items-center space-x-2 mt-1 text-gray-500">
+          <div className="flex flex-col space-y-1 mt-1 text-gray-500">
             {habit.reminderTime && (
-              <>
+              <div className="flex items-center space-x-2">
                 <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                 <span className="text-sm">提醒时间：{habit.reminderTime}</span>
-              </>
+              </div>
             )}
+            <div className="flex items-center space-x-2">
+              <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
+              <span className="text-sm">总打卡次数：{logs.length} 次</span>
+            </div>
           </div>
         </div>
       </div>

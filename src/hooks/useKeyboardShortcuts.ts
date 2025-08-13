@@ -31,18 +31,26 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcut[]) => {
 
         // 检查按键是否匹配
         const keyMatch = event.key.toLowerCase() === shortcut.key.toLowerCase();
-        const ctrlMatch = !shortcut.ctrlKey || event.ctrlKey;
-        const metaMatch = !shortcut.metaKey || event.metaKey;
-        const shiftMatch = !shortcut.shiftKey || event.shiftKey;
-        const altMatch = !shortcut.altKey || event.altKey;
 
-        // Mac系统下，Cmd键优先于Ctrl键
-        const modifierMatch =
-          shortcut.ctrlKey || shortcut.metaKey
-            ? (event.ctrlKey || event.metaKey) && ctrlMatch && metaMatch
-            : ctrlMatch && metaMatch;
+        // 检查修饰键匹配
+        let modifierMatch = true;
 
-        if (keyMatch && modifierMatch && shiftMatch && altMatch) {
+        // 检查主修饰键 (Ctrl/Cmd) - 如果定义了任一个，则需要按下 Ctrl 或 Cmd
+        if (shortcut.ctrlKey || shortcut.metaKey) {
+          modifierMatch = modifierMatch && (event.ctrlKey || event.metaKey);
+        }
+
+        // 检查 Alt 键
+        if (shortcut.altKey) {
+          modifierMatch = modifierMatch && event.altKey;
+        }
+
+        // 检查 Shift 键
+        if (shortcut.shiftKey) {
+          modifierMatch = modifierMatch && event.shiftKey;
+        }
+
+        if (keyMatch && modifierMatch) {
           // 对于修饰键组合，即使在输入框中也应该触发
           const isModifierCombo =
             shortcut.ctrlKey || shortcut.metaKey || shortcut.altKey;
