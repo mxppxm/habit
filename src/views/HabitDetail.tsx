@@ -29,7 +29,6 @@ const HabitDetail: React.FC = () => {
     checkinHabit,
     deleteHabitLog,
     updateHabitLog,
-    init,
   } = useHabitStore();
 
   const [editingLog, setEditingLog] = useState<string | null>(null);
@@ -45,11 +44,6 @@ const HabitDetail: React.FC = () => {
     ? categories.find((c) => c.id === habit.categoryId)
     : null;
   const logs = habitLogs.filter((log) => log.habitId === habitId);
-
-  // 初始化数据
-  useEffect(() => {
-    init();
-  }, [init]);
 
   useEffect(() => {
     if (!habit) {

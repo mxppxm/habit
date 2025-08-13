@@ -18,7 +18,6 @@ const Dashboard: React.FC = () => {
     habitLogs,
     checkinHabit,
     deleteHabitLog,
-    init,
     loading,
     aiEnabled,
   } = useHabitStore();
@@ -29,11 +28,6 @@ const Dashboard: React.FC = () => {
 
   // 使用通知提醒 Hook
   useNotification(habits);
-
-  // 初始化数据
-  useEffect(() => {
-    init();
-  }, [init]);
 
   // 注意：快捷键由 EnhancedDialog 组件处理，这里不需要重复监听
 

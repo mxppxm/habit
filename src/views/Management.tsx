@@ -223,7 +223,7 @@ const Management: React.FC = () => {
     useHabitStore();
   const { habits, addHabit, updateHabit, deleteHabit, updateHabitCategory } =
     useHabitStore();
-  const { aiEnabled, apiKey, habitLogs, init, loading } = useHabitStore();
+  const { aiEnabled, apiKey, habitLogs, loading } = useHabitStore();
   const [categoryName, setCategoryName] = useState("");
   const [editCategory, setEditCategory] = useState<{
     id: string;
@@ -282,11 +282,6 @@ const Management: React.FC = () => {
   const filteredHabits = selectedCategoryFilter
     ? habits.filter((habit) => habit.categoryId === selectedCategoryFilter)
     : habits;
-
-  // 初始化数据
-  useEffect(() => {
-    init();
-  }, [init]);
 
   // 快捷键处理
   useEffect(() => {

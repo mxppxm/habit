@@ -12,12 +12,7 @@ import {
 import dayjs from "dayjs";
 
 const Statistics: React.FC = () => {
-  const { habitLogs, init } = useHabitStore();
-
-  // 初始化数据
-  useEffect(() => {
-    init();
-  }, [init]);
+  const { habitLogs } = useHabitStore();
 
   // 生成最近7天的日期数组
   const lastSevenDays = Array.from({ length: 7 }, (_, i) =>
