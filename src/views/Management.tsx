@@ -73,9 +73,6 @@ const TimePicker: React.FC<{
       <EnhancedDialog
         open={isOpen}
         onOpenChange={setIsOpen}
-        onConfirm={() => setIsOpen(false)}
-        confirmText="确定"
-        showCancel={false}
         className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl z-[100000]"
       >
         <div className="flex items-center justify-between mb-6">

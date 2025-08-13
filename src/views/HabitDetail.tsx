@@ -142,7 +142,6 @@ const HabitDetail: React.FC = () => {
   // 获取可以补卡的日期（前一周）
   const getAvailableMakeupDates = () => {
     const today = dayjs();
-    const oneWeekAgo = today.subtract(7, "day");
     const dates = [];
 
     for (let i = 1; i <= 7; i++) {
