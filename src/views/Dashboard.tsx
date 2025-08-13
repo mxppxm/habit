@@ -43,6 +43,19 @@ const Dashboard: React.FC = () => {
   };
 
   /**
+   * 一键打卡 - 无需弹窗
+   */
+  const handleQuickCheckin = async (
+    habitId: string,
+    event?: React.MouseEvent
+  ) => {
+    if (event) {
+      event.stopPropagation(); // 阻止卡片点击事件
+    }
+    await checkinHabit(habitId, "");
+  };
+
+  /**
    * 检查某个习惯今天是否已打卡
    */
   const isCheckedToday = (habitId: string): boolean => {
@@ -158,11 +171,13 @@ const Dashboard: React.FC = () => {
                         >
                           <div className="flex items-center justify-between mb-3">
                             <div
-                              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 ${
+                              onClick={(e) => handleQuickCheckin(habit.id, e)}
+                              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-110 ${
                                 isChecked
-                                  ? "bg-green-500 shadow-lg"
-                                  : "bg-gray-100 group-hover:bg-[#FF5A5F]"
+                                  ? "bg-green-500 shadow-lg hover:bg-green-600"
+                                  : "bg-gray-100 group-hover:bg-[#FF5A5F] hover:!bg-[#FF5A5F]"
                               }`}
+                              title={isChecked ? "继续打卡" : "一键打卡"}
                             >
                               <span
                                 className={`text-lg sm:text-xl transition-all duration-200 ${
@@ -193,6 +208,7 @@ const Dashboard: React.FC = () => {
                                   navigate(`/habit/${habit.id}`);
                                 }}
                                 className="p-1.5 rounded-full hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
+                                title="查看详情"
                               >
                                 <Info className="w-4 h-4 text-gray-500" />
                               </button>
@@ -216,11 +232,7 @@ const Dashboard: React.FC = () => {
                                   </div>
                                 );
                               } else {
-                                return (
-                                  <p className="text-sm text-gray-500">
-                                    点击打卡
-                                  </p>
-                                );
+                                return null;
                               }
                             })()}
                           </div>

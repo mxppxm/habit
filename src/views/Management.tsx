@@ -241,7 +241,8 @@ const Management: React.FC = () => {
     new Set()
   );
   const [selectedHabits, setSelectedHabits] = useState<Set<string>>(new Set());
-  const [batchMode, setBatchMode] = useState(false);
+  const [categoryBatchMode, setCategoryBatchMode] = useState(false);
+  const [habitBatchMode, setHabitBatchMode] = useState(false);
   const [showBatchCategoryActions, setShowBatchCategoryActions] =
     useState(false);
   const [showBatchHabitActions, setShowBatchHabitActions] = useState(false);
@@ -265,6 +266,15 @@ const Management: React.FC = () => {
   const [currentGoalForAI, setCurrentGoalForAI] = useState<string>("");
   const [aiHabits, setAIHabits] = useState<AIHabitSuggestion[] | null>(null);
 
+  // 删除确认状态
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    type: "category" | "habit";
+    id: string;
+    name: string;
+    relatedCount?: number;
+  } | null>(null);
+
   // 目标筛选状态
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<
     string | null
@@ -272,7 +282,7 @@ const Management: React.FC = () => {
 
   // 处理目标点击筛选
   const handleCategoryClick = (categoryId: string) => {
-    if (batchMode) return; // 批量模式下不处理筛选
+    if (categoryBatchMode || habitBatchMode) return; // 批量模式下不处理筛选
     setSelectedCategoryFilter(
       selectedCategoryFilter === categoryId ? null : categoryId
     );
@@ -286,29 +296,35 @@ const Management: React.FC = () => {
   // 快捷键处理
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (batchMode) {
+      if (categoryBatchMode || habitBatchMode) {
         // Ctrl+A 全选
         if (e.ctrlKey && e.key === "a") {
           e.preventDefault();
-          if (showBatchCategoryActions) {
+          if (categoryBatchMode) {
             setSelectedCategories(new Set(categories.map((c) => c.id)));
-          } else if (showBatchHabitActions) {
+            setShowBatchCategoryActions(true);
+          } else if (habitBatchMode) {
             setSelectedHabits(new Set(filteredHabits.map((h) => h.id)));
+            setShowBatchHabitActions(true);
           }
         }
         // Delete 删除选中项
         else if (e.key === "Delete") {
           e.preventDefault();
-          if (selectedCategories.size > 0) {
+          if (categoryBatchMode && selectedCategories.size > 0) {
             handleBatchDeleteCategories();
-          } else if (selectedHabits.size > 0) {
+          } else if (habitBatchMode && selectedHabits.size > 0) {
             handleBatchDeleteHabits();
           }
         }
         // Escape 退出批量模式
         else if (e.key === "Escape") {
           e.preventDefault();
-          exitBatchMode();
+          if (categoryBatchMode) {
+            exitCategoryBatchMode();
+          } else if (habitBatchMode) {
+            exitHabitBatchMode();
+          }
         }
       }
     };
@@ -316,7 +332,8 @@ const Management: React.FC = () => {
     document.addEventListener("keydown", handleKeyDown);
     return () => document.removeEventListener("keydown", handleKeyDown);
   }, [
-    batchMode,
+    categoryBatchMode,
+    habitBatchMode,
     showBatchCategoryActions,
     showBatchHabitActions,
     selectedCategories,
@@ -326,17 +343,25 @@ const Management: React.FC = () => {
   ]);
 
   // 批量操作函数
-  const enterBatchMode = () => {
-    setBatchMode(true);
+  const enterCategoryBatchMode = () => {
+    setCategoryBatchMode(true);
     setSelectedCategories(new Set());
+  };
+
+  const exitCategoryBatchMode = () => {
+    setCategoryBatchMode(false);
+    setSelectedCategories(new Set());
+    setShowBatchCategoryActions(false);
+  };
+
+  const enterHabitBatchMode = () => {
+    setHabitBatchMode(true);
     setSelectedHabits(new Set());
   };
 
-  const exitBatchMode = () => {
-    setBatchMode(false);
-    setSelectedCategories(new Set());
+  const exitHabitBatchMode = () => {
+    setHabitBatchMode(false);
     setSelectedHabits(new Set());
-    setShowBatchCategoryActions(false);
     setShowBatchHabitActions(false);
   };
 
@@ -375,12 +400,29 @@ const Management: React.FC = () => {
   const handleBatchDeleteCategories = async () => {
     if (selectedCategories.size === 0) return;
 
-    if (confirm(`确定要删除选中的 ${selectedCategories.size} 个目标吗？`)) {
+    // 检查是否有目标包含习惯
+    const categoriesWithHabits = Array.from(selectedCategories).filter(
+      (categoryId) => habits.some((h) => h.categoryId === categoryId)
+    );
+
+    let confirmMessage = `确定要删除选中的 ${selectedCategories.size} 个目标吗？`;
+    if (categoriesWithHabits.length > 0) {
+      confirmMessage += `\n\n其中 ${categoriesWithHabits.length} 个目标包含习惯，删除目标将同时删除其下所有习惯以及相关的打卡记录。`;
+    }
+
+    if (confirm(confirmMessage)) {
       try {
         for (const categoryId of selectedCategories) {
+          // 删除目标及其所有习惯
+          const relatedHabits = habits.filter(
+            (h) => h.categoryId === categoryId
+          );
+          for (const habit of relatedHabits) {
+            await deleteHabit(habit.id);
+          }
           await deleteCategory(categoryId);
         }
-        exitBatchMode();
+        exitCategoryBatchMode();
       } catch (error) {
         alert("删除目标时出错，请重试");
       }
@@ -390,12 +432,22 @@ const Management: React.FC = () => {
   const handleBatchDeleteHabits = async () => {
     if (selectedHabits.size === 0) return;
 
-    if (confirm(`确定要删除选中的 ${selectedHabits.size} 个习惯吗？`)) {
+    // 检查是否有习惯包含打卡记录
+    const habitsWithLogs = Array.from(selectedHabits).filter((habitId) =>
+      habitLogs.some((log) => log.habitId === habitId)
+    );
+
+    let confirmMessage = `确定要删除选中的 ${selectedHabits.size} 个习惯吗？`;
+    if (habitsWithLogs.length > 0) {
+      confirmMessage += `\n\n其中 ${habitsWithLogs.length} 个习惯已有打卡记录，删除习惯将同时删除所有相关的打卡记录。`;
+    }
+
+    if (confirm(confirmMessage)) {
       try {
         for (const habitId of selectedHabits) {
           await deleteHabit(habitId);
         }
-        exitBatchMode();
+        exitHabitBatchMode();
       } catch (error) {
         alert("删除习惯时出错，请重试");
       }
@@ -409,7 +461,7 @@ const Management: React.FC = () => {
       for (const habitId of selectedHabits) {
         await updateHabitCategory(habitId, batchMoveToCategory);
       }
-      exitBatchMode();
+      exitHabitBatchMode();
       setBatchDialogOpen(false);
       setBatchMoveToCategory("");
     } catch (error) {
@@ -671,6 +723,75 @@ const Management: React.FC = () => {
     clearAIError();
   };
 
+  // 删除确认处理函数
+  const handleDeleteCategory = (categoryId: string) => {
+    const category = categories.find((c) => c.id === categoryId);
+    if (!category) return;
+
+    const relatedHabits = habits.filter((h) => h.categoryId === categoryId);
+
+    if (relatedHabits.length > 0) {
+      setDeleteTarget({
+        type: "category",
+        id: categoryId,
+        name: category.name,
+        relatedCount: relatedHabits.length,
+      });
+      setDeleteConfirmOpen(true);
+    } else {
+      // 直接删除
+      deleteCategory(categoryId);
+    }
+  };
+
+  const handleDeleteHabit = (habitId: string) => {
+    const habit = habits.find((h) => h.id === habitId);
+    if (!habit) return;
+
+    const relatedLogs = habitLogs.filter((log) => log.habitId === habitId);
+
+    if (relatedLogs.length > 0) {
+      setDeleteTarget({
+        type: "habit",
+        id: habitId,
+        name: habit.name,
+        relatedCount: relatedLogs.length,
+      });
+      setDeleteConfirmOpen(true);
+    } else {
+      // 直接删除
+      deleteHabit(habitId);
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      if (deleteTarget.type === "category") {
+        // 删除目标及其所有习惯和相关的打卡记录
+        const relatedHabits = habits.filter(
+          (h) => h.categoryId === deleteTarget.id
+        );
+        for (const habit of relatedHabits) {
+          await deleteHabit(habit.id);
+        }
+        await deleteCategory(deleteTarget.id);
+      } else {
+        await deleteHabit(deleteTarget.id);
+      }
+      setDeleteConfirmOpen(false);
+      setDeleteTarget(null);
+    } catch (error) {
+      alert("删除时出错，请重试");
+    }
+  };
+
+  const cancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setDeleteTarget(null);
+  };
+
   return (
     <div className="space-y-8">
       {/* 目标 */}
@@ -681,18 +802,18 @@ const Management: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
               目标
             </h2>
-            {batchMode && selectedCategories.size > 0 && (
+            {categoryBatchMode && selectedCategories.size > 0 && (
               <span className="bg-[#FF5A5F] text-white px-2 py-1 rounded-full text-sm">
                 已选择 {selectedCategories.size} 项
               </span>
             )}
           </div>
           <div className="flex items-center space-x-2">
-            {!batchMode ? (
+            {!categoryBatchMode ? (
               <>
                 {categories.length > 0 && (
                   <button
-                    onClick={enterBatchMode}
+                    onClick={enterCategoryBatchMode}
                     className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
                   >
                     <CheckSquare className="w-4 h-4" />
@@ -733,7 +854,7 @@ const Management: React.FC = () => {
                   </button>
                 )}
                 <button
-                  onClick={exitBatchMode}
+                  onClick={exitCategoryBatchMode}
                   className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
                 >
                   <X className="w-4 h-4" />
@@ -749,111 +870,113 @@ const Management: React.FC = () => {
 
         {categories.length > 0 ? (
           <div className="space-y-3">
-            {!batchMode && (
+            {!categoryBatchMode && (
               <div className="text-sm text-gray-500 mb-4 flex items-center space-x-2">
                 <span>💡 点击目标卡片来筛选相关习惯</span>
               </div>
             )}
-            {categories.map((category) => (
-              <div
-                key={category.id}
-                className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md cursor-pointer ${
-                  batchMode && selectedCategories.has(category.id)
-                    ? "border-[#FF5A5F] bg-pink-50"
-                    : selectedCategoryFilter === category.id
-                    ? "border-[#FF5A5F] bg-gradient-to-r from-pink-50 to-orange-50 shadow-md"
-                    : "border-gray-200 hover:border-[#FF5A5F]"
-                }`}
-                onClick={() => handleCategoryClick(category.id)}
-              >
-                <div className="flex items-center space-x-3">
-                  {batchMode && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleCategorySelection(category.id);
-                      }}
-                      className="flex-shrink-0"
-                    >
-                      {selectedCategories.has(category.id) ? (
-                        <CheckSquare className="w-5 h-5 text-[#FF5A5F]" />
-                      ) : (
-                        <Square className="w-5 h-5 text-gray-400 hover:text-[#FF5A5F]" />
-                      )}
-                    </button>
-                  )}
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      selectedCategoryFilter === category.id
-                        ? "bg-orange-500"
-                        : "bg-[#FF5A5F]"
-                    }`}
-                  ></div>
-                  <div className="flex flex-col space-y-1">
-                    <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-800">
-                        {category.name}
-                      </span>
-                      {selectedCategoryFilter === category.id && (
-                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                          已筛选
+            <div className="max-h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+              {categories.map((category) => (
+                <div
+                  key={category.id}
+                  className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md cursor-pointer ${
+                    categoryBatchMode && selectedCategories.has(category.id)
+                      ? "border-[#FF5A5F] bg-pink-50"
+                      : selectedCategoryFilter === category.id
+                      ? "border-[#FF5A5F] bg-gradient-to-r from-pink-50 to-orange-50 shadow-md"
+                      : "border-gray-200 hover:border-[#FF5A5F]"
+                  }`}
+                  onClick={() => {
+                    if (categoryBatchMode) {
+                      toggleCategorySelection(category.id);
+                    } else {
+                      handleCategoryClick(category.id);
+                    }
+                  }}
+                >
+                  <div className="flex items-center space-x-3">
+                    {categoryBatchMode && (
+                      <div className="flex-shrink-0">
+                        {selectedCategories.has(category.id) ? (
+                          <CheckSquare className="w-5 h-5 text-[#FF5A5F]" />
+                        ) : (
+                          <Square className="w-5 h-5 text-gray-400" />
+                        )}
+                      </div>
+                    )}
+                    <div
+                      className={`w-3 h-3 rounded-full ${
+                        selectedCategoryFilter === category.id
+                          ? "bg-orange-500"
+                          : "bg-[#FF5A5F]"
+                      }`}
+                    ></div>
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <span className="font-medium text-gray-800">
+                          {category.name}
                         </span>
-                      )}
+                        {selectedCategoryFilter === category.id && (
+                          <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                            已筛选
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs text-gray-500">
+                        {
+                          habits.filter((h) => h.categoryId === category.id)
+                            .length
+                        }{" "}
+                        个习惯
+                      </span>
                     </div>
-                    <span className="text-xs text-gray-500">
-                      {
-                        habits.filter((h) => h.categoryId === category.id)
-                          .length
-                      }{" "}
-                      个习惯
-                    </span>
                   </div>
-                </div>
-                {!batchMode && (
-                  <div className="flex items-center space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    {aiEnabled && (
+                  {!categoryBatchMode && (
+                    <div className="flex items-center space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      {aiEnabled && (
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleGenerateAIHabits(category.name);
+                          }}
+                          className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-purple-600 hover:bg-purple-50 rounded-md transition-colors duration-200"
+                          title="AI 生成习惯"
+                        >
+                          <Brain className="w-4 h-4" />
+                          <span className="text-xs sm:text-sm hidden sm:inline">
+                            AI生成
+                          </span>
+                        </button>
+                      )}
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
-                          handleGenerateAIHabits(category.name);
+                          openEditCategoryDialog(category);
                         }}
-                        className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-purple-600 hover:bg-purple-50 rounded-md transition-colors duration-200"
-                        title="AI 生成习惯"
+                        className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
                       >
-                        <Brain className="w-4 h-4" />
+                        <Edit2 className="w-4 h-4" />
                         <span className="text-xs sm:text-sm hidden sm:inline">
-                          AI生成
+                          编辑
                         </span>
                       </button>
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        openEditCategoryDialog(category);
-                      }}
-                      className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm hidden sm:inline">
-                        编辑
-                      </span>
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteCategory(category.id);
-                      }}
-                      className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span className="text-xs sm:text-sm hidden sm:inline">
-                        删除
-                      </span>
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteCategory(category.id);
+                        }}
+                        className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                        <span className="text-xs sm:text-sm hidden sm:inline">
+                          删除
+                        </span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         ) : (
           <div className="text-center py-12">
@@ -1065,18 +1188,18 @@ const Management: React.FC = () => {
                 </button>
               </div>
             )}
-            {batchMode && selectedHabits.size > 0 && (
+            {habitBatchMode && selectedHabits.size > 0 && (
               <span className="bg-[#FF5A5F] text-white px-2 py-1 rounded-full text-sm">
                 已选择 {selectedHabits.size} 项
               </span>
             )}
           </div>
           <div className="flex items-center space-x-2">
-            {!batchMode ? (
+            {!habitBatchMode ? (
               <>
                 {filteredHabits.length > 0 && (
                   <button
-                    onClick={enterBatchMode}
+                    onClick={enterHabitBatchMode}
                     className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
                   >
                     <CheckSquare className="w-4 h-4" />
@@ -1126,7 +1249,7 @@ const Management: React.FC = () => {
                   </>
                 )}
                 <button
-                  onClick={exitBatchMode}
+                  onClick={exitHabitBatchMode}
                   className="inline-flex items-center space-x-2 px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
                 >
                   <X className="w-4 h-4" />
@@ -1141,7 +1264,7 @@ const Management: React.FC = () => {
         </div>
 
         {filteredHabits.length > 0 ? (
-          <div className="space-y-3">
+          <div className="max-h-96 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
             {filteredHabits.map((habit) => {
               const category = categories.find(
                 (c) => c.id === habit.categoryId
@@ -1149,24 +1272,26 @@ const Management: React.FC = () => {
               return (
                 <div
                   key={habit.id}
-                  className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md ${
-                    batchMode && selectedHabits.has(habit.id)
+                  className={`group flex items-center justify-between p-3 sm:p-4 rounded-lg border transition-all duration-200 hover:shadow-md cursor-pointer ${
+                    habitBatchMode && selectedHabits.has(habit.id)
                       ? "border-[#FF5A5F] bg-pink-50"
                       : "border-gray-200 hover:border-[#FF5A5F]"
                   }`}
+                  onClick={() => {
+                    if (habitBatchMode) {
+                      toggleHabitSelection(habit.id);
+                    }
+                  }}
                 >
                   <div className="flex items-center space-x-3 flex-1 min-w-0">
-                    {batchMode && (
-                      <button
-                        onClick={() => toggleHabitSelection(habit.id)}
-                        className="flex-shrink-0"
-                      >
+                    {habitBatchMode && (
+                      <div className="flex-shrink-0">
                         {selectedHabits.has(habit.id) ? (
                           <CheckSquare className="w-5 h-5 text-[#FF5A5F]" />
                         ) : (
-                          <Square className="w-5 h-5 text-gray-400 hover:text-[#FF5A5F]" />
+                          <Square className="w-5 h-5 text-gray-400" />
                         )}
-                      </button>
+                      </div>
                     )}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center space-x-2 sm:space-x-3 mb-2">
@@ -1201,10 +1326,13 @@ const Management: React.FC = () => {
                       </div>
                     </div>
                   </div>
-                  {!batchMode && (
+                  {!habitBatchMode && (
                     <div className="flex items-center space-x-1 sm:space-x-2 opacity-100 sm:opacity-0 group-hover:opacity-100 transition-opacity duration-200">
                       <button
-                        onClick={() => navigate(`/habit/${habit.id}`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/habit/${habit.id}`);
+                        }}
                         className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
                       >
                         <Info className="w-4 h-4" />
@@ -1213,7 +1341,10 @@ const Management: React.FC = () => {
                         </span>
                       </button>
                       <button
-                        onClick={() => openEditHabitDialog(habit)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openEditHabitDialog(habit);
+                        }}
                         className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#00A699] hover:bg-green-50 rounded-md transition-colors duration-200"
                       >
                         <Edit2 className="w-4 h-4" />
@@ -1222,7 +1353,10 @@ const Management: React.FC = () => {
                         </span>
                       </button>
                       <button
-                        onClick={() => deleteHabit(habit.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteHabit(habit.id);
+                        }}
                         className="flex items-center space-x-1 px-2 sm:px-3 py-1.5 text-[#FC642D] hover:bg-red-50 rounded-md transition-colors duration-200"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -1586,6 +1720,107 @@ const Management: React.FC = () => {
           onAddHabits={handleAddAIHabits}
           onRetry={handleRetryAIGeneration}
         />
+
+        {/* 删除确认弹窗 */}
+        <EnhancedDialog
+          open={deleteConfirmOpen}
+          onOpenChange={setDeleteConfirmOpen}
+          onConfirm={confirmDelete}
+          confirmShortcut={{ key: "Enter", ctrlKey: false, metaKey: false }}
+        >
+          <div className="flex items-center justify-between mb-6">
+            <Dialog.Title className="text-2xl font-semibold text-gray-800">
+              确认删除
+            </Dialog.Title>
+            <Dialog.Close asChild>
+              <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </Dialog.Close>
+          </div>
+
+          {deleteTarget && (
+            <div className="mb-6">
+              {deleteTarget.type === "category" ? (
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3 p-4 bg-red-50 rounded-lg border border-red-200">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-red-500 rounded-full flex items-center justify-center">
+                        <Trash2 className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-red-800 mb-2">
+                        删除目标：{deleteTarget.name}
+                      </h3>
+                      <p className="text-red-700 mb-3">
+                        此目标包含{" "}
+                        <span className="font-semibold">
+                          {deleteTarget.relatedCount}
+                        </span>{" "}
+                        个习惯。
+                      </p>
+                      <div className="bg-red-100 border border-red-300 rounded-lg p-3">
+                        <p className="text-red-800 font-medium mb-1">⚠️ 警告</p>
+                        <p className="text-red-700 text-sm">
+                          删除目标将同时删除其下所有习惯以及相关的打卡记录，此操作不可恢复。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-start space-x-3 p-4 bg-orange-50 rounded-lg border border-orange-200">
+                    <div className="flex-shrink-0">
+                      <div className="w-10 h-10 bg-orange-500 rounded-full flex items-center justify-center">
+                        <Target className="w-5 h-5 text-white" />
+                      </div>
+                    </div>
+                    <div className="flex-1">
+                      <h3 className="text-lg font-semibold text-orange-800 mb-2">
+                        删除习惯：{deleteTarget.name}
+                      </h3>
+                      <p className="text-orange-700 mb-3">
+                        此习惯已有{" "}
+                        <span className="font-semibold">
+                          {deleteTarget.relatedCount}
+                        </span>{" "}
+                        次打卡记录。
+                      </p>
+                      <div className="bg-orange-100 border border-orange-300 rounded-lg p-3">
+                        <p className="text-orange-800 font-medium mb-1">
+                          ⚠️ 注意
+                        </p>
+                        <p className="text-orange-700 text-sm">
+                          删除习惯将同时删除所有相关的打卡记录，此操作不可恢复。
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={cancelDelete}
+              className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium"
+            >
+              取消
+            </button>
+            <button
+              onClick={confirmDelete}
+              className="px-6 py-2.5 bg-red-500 text-white rounded-xl hover:bg-red-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
+            >
+              确认删除
+              <span className="text-xs text-red-200 ml-2 opacity-70">
+                Enter
+              </span>
+            </button>
+          </div>
+        </EnhancedDialog>
       </div>
     </div>
   );
