@@ -38,58 +38,68 @@ const TimePicker: React.FC<{
     i.toString().padStart(2, "0")
   );
 
-  const [hour, minute] = value ? value.split(":") : ["08", "00"];
+  // 获取当前时间作为默认值
+  const getCurrentTime = () => {
+    const now = new Date();
+    const currentHour = now.getHours().toString().padStart(2, "0");
+    const currentMinute = now.getMinutes().toString().padStart(2, "0");
+    return [currentHour, currentMinute];
+  };
+
+  const [hour, minute] = value ? value.split(":") : getCurrentTime();
 
   const handleTimeChange = (newHour: string, newMinute: string) => {
     onChange(`${newHour}:${newMinute}`);
     setIsOpen(false);
   };
 
-  // 关闭下拉菜单当点击外部时
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest(".time-picker-container")) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isOpen]);
-
   return (
-    <div className="relative time-picker-container">
+    <>
       <button
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => setIsOpen(true)}
         className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 text-left flex items-center justify-between bg-white hover:border-gray-300"
       >
         <div className="flex items-center space-x-2">
           <Clock className="w-5 h-5 text-gray-400" />
           <span className={value ? "text-gray-900" : "text-gray-400"}>
-            {value || "不设置提醒时间"}
+            {value || `不设置提醒时间 (当前: ${getCurrentTime().join(":")})`}
           </span>
         </div>
-        <ChevronDown
-          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
+        <ChevronDown className="w-5 h-5 text-gray-400" />
       </button>
 
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-[9999] p-4 max-w-sm">
-          <div className="mb-3 text-center">
-            <p className="text-sm text-gray-600">选择提醒时间</p>
+      {/* 时间选择弹窗 */}
+      <EnhancedDialog
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        onConfirm={() => setIsOpen(false)}
+        confirmText="确定"
+        showCancel={false}
+        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl z-[100000]"
+      >
+        <div className="flex items-center justify-between mb-6">
+          <Dialog.Title className="text-xl font-semibold text-gray-800">
+            选择提醒时间
+          </Dialog.Title>
+          <Dialog.Close asChild>
+            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+              <X className="w-5 h-5 text-gray-500" />
+            </button>
+          </Dialog.Close>
+        </div>
+
+        <div className="space-y-4">
+          <div className="text-center mb-4">
+            <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
+              <Clock className="w-4 h-4" />
+              <span>当前时间: {getCurrentTime().join(":")}</span>
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">小时</p>
-              <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-3">小时</p>
+              <div className="max-h-40 overflow-y-auto border border-gray-100 rounded-lg">
                 {hours.map((h) => (
                   <button
                     key={h}
@@ -106,8 +116,8 @@ const TimePicker: React.FC<{
               </div>
             </div>
             <div>
-              <p className="text-sm font-medium text-gray-700 mb-2">分钟</p>
-              <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-lg">
+              <p className="text-sm font-medium text-gray-700 mb-3">分钟</p>
+              <div className="max-h-40 overflow-y-auto border border-gray-100 rounded-lg">
                 {minutes
                   .filter((_, i) => i % 5 === 0)
                   .map((m) => (
@@ -126,20 +136,37 @@ const TimePicker: React.FC<{
               </div>
             </div>
           </div>
-          <div className="mt-3 text-center">
+
+          <div className="flex justify-center space-x-2 pt-4 border-t border-gray-200">
             <button
               onClick={() => {
                 onChange("");
                 setIsOpen(false);
               }}
-              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+              className="px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm"
             >
-              清除提醒时间
+              清除时间
+            </button>
+            <button
+              onClick={() => {
+                const [currentHour, currentMinute] = getCurrentTime();
+                onChange(`${currentHour}:${currentMinute}`);
+                setIsOpen(false);
+              }}
+              className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm"
+            >
+              当前时间
+            </button>
+            <button
+              onClick={() => setIsOpen(false)}
+              className="px-3 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-colors duration-200 text-sm"
+            >
+              确定
             </button>
           </div>
         </div>
-      )}
-    </div>
+      </EnhancedDialog>
+    </>
   );
 };
 
@@ -1420,7 +1447,7 @@ const Management: React.FC = () => {
               ? !habitName.trim() || !selectedCategory
               : habitInputs.every((name) => !name.trim()) || !selectedCategory
           }
-          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-lg mx-4 shadow-2xl z-50"
+          className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-lg mx-4 shadow-2xl z-50 max-h-[90vh] overflow-y-auto"
           confirmShortcut={{ key: "Enter", ctrlKey: false, metaKey: false }}
         >
           <div className="flex items-center justify-between mb-6">
@@ -1573,11 +1600,16 @@ const Management: React.FC = () => {
                               }，如：每天运动30分钟`}
                               autoFocus={index === focusedIndex}
                             />
-                            <div className="flex items-center space-x-2">
-                              <Clock className="w-4 h-4 text-gray-400" />
-                              <span className="text-sm text-gray-600 font-medium">
-                                提醒时间
-                              </span>
+                            <div>
+                              <div className="flex items-center space-x-2 mb-2">
+                                <Clock className="w-4 h-4 text-gray-400" />
+                                <span className="text-sm text-gray-600 font-medium">
+                                  提醒时间
+                                </span>
+                                <span className="text-xs text-gray-400 font-normal">
+                                  (可选)
+                                </span>
+                              </div>
                               <TimePicker
                                 value={habitReminderTimes[index] || ""}
                                 onChange={(time) =>
