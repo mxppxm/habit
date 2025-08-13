@@ -128,186 +128,225 @@ const Dashboard: React.FC = () => {
   );
 
   return (
-    <div className="space-y-6">
-      {/* 显示有习惯的目标 */}
+    <div className="min-h-screen">
+      {/* 显示有习惯的目标 - 方格状布局 */}
       {categories.length > 0 && (
         <>
-          {categories.map((category) => {
-            const categoryHabits = habits.filter(
-              (habit) => habit.categoryId === category.id
-            );
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+            {categories.map((category) => {
+              const categoryHabits = habits.filter(
+                (habit) => habit.categoryId === category.id
+              );
 
-            if (categoryHabits.length === 0) return null;
+              if (categoryHabits.length === 0) return null;
 
-            return (
-              <div key={category.id} className="card p-4 sm:p-8">
-                <div className="flex items-center space-x-3 mb-4 sm:mb-6">
-                  <div className="w-3 h-3 sm:w-4 sm:h-4 rounded-full bg-[#FF5A5F]"></div>
-                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                    {category.name}
-                  </h2>
-                  <div className="flex-1 h-px bg-gray-200"></div>
-                  <span className="text-xs sm:text-sm text-gray-500 bg-gray-100 px-2 sm:px-3 py-1 rounded-full">
-                    {categoryHabits.length} 个习惯
-                  </span>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {categoryHabits.map((habit) => {
-                    const isChecked = isCheckedToday(habit.id);
-                    const checkinTime = getTodayCheckinTime(habit.id);
+              return (
+                <div
+                  key={category.id}
+                  className="bg-gradient-to-br from-white via-gray-50/20 to-gray-100/30 rounded-2xl border border-gray-200/60 hover:border-[#FF5A5F]/40 transition-all duration-300 shadow-sm hover:shadow-md p-4 sm:p-5 min-h-[200px] flex flex-col"
+                >
+                  {/* 目标标题区域 */}
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-5 h-5 rounded-full bg-gradient-to-r from-[#FF5A5F] to-pink-500 shadow-sm"></div>
+                      <h2 className="text-xl sm:text-2xl font-bold text-gray-800 tracking-tight">
+                        {category.name}
+                      </h2>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500 bg-white/70 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium">
+                        {categoryHabits.length} 个习惯
+                      </span>
+                    </div>
+                  </div>
 
-                    return (
-                      <div key={habit.id}>
+                  {/* 习惯网格 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 flex-1">
+                    {categoryHabits.map((habit) => {
+                      const isChecked = isCheckedToday(habit.id);
+                      const checkinTime = getTodayCheckinTime(habit.id);
+
+                      return (
                         <div
+                          key={habit.id}
                           onClick={() => setSelectedHabitId(habit.id)}
                           className={`
-                          group p-4 sm:p-6 rounded-2xl cursor-pointer transition-all duration-300 transform hover:scale-105
-                          ${
-                            isChecked
-                              ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 shadow-lg"
-                              : "bg-white border-2 border-gray-100 hover:border-[#FF5A5F] hover:shadow-xl"
-                          }
-                        `}
+                        group p-3 sm:p-4 rounded-2xl cursor-pointer transition-all duration-300 transform hover:scale-[1.02] relative overflow-hidden flex flex-col
+                        ${
+                          isChecked
+                            ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200/60 shadow-md hover:shadow-lg"
+                            : "bg-white/90 backdrop-blur-sm border-2 border-gray-200/50 hover:border-[#FF5A5F]/50 hover:shadow-md"
+                        }
+                      `}
                         >
-                          <div className="flex items-center justify-between mb-3">
-                            <div
-                              onClick={(e) => handleQuickCheckin(habit.id, e)}
-                              className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full flex items-center justify-center transition-all duration-200 cursor-pointer hover:scale-110 ${
-                                isChecked
-                                  ? "bg-green-500 shadow-lg hover:bg-green-600"
-                                  : "bg-gray-100 group-hover:bg-[#FF5A5F] hover:!bg-[#FF5A5F]"
-                              }`}
-                              title={isChecked ? "继续打卡" : "一键打卡"}
-                            >
-                              <span
-                                className={`text-lg sm:text-xl transition-all duration-200 ${
+                          {/* 闹钟图标和习惯名称 */}
+                          <div className="">
+                            <div className="flex items-center space-x-3 mb-2">
+                              <div
+                                onClick={(e) => handleQuickCheckin(habit.id, e)}
+                                className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300 cursor-pointer hover:scale-110 shadow-sm flex-shrink-0 ${
                                   isChecked
-                                    ? "text-white"
-                                    : "group-hover:text-white"
+                                    ? "bg-gradient-to-br from-green-500 to-green-600 shadow-green-200 hover:shadow-green-300"
+                                    : "bg-gradient-to-br from-gray-100 to-gray-200 group-hover:from-[#FF5A5F] group-hover:to-pink-500 hover:!from-[#FF5A5F] hover:!to-pink-500"
                                 }`}
+                                title={isChecked ? "继续打卡" : "一键打卡"}
                               >
-                                {isChecked ? "✓" : "⏰"}
-                              </span>
-                            </div>
-                            <div className="text-right">
-                              {habit.reminderTime && (
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-1 rounded-full">
-                                  {habit.reminderTime}
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          <div className="space-y-2">
-                            <div className="flex items-center justify-between">
-                              <h3 className="font-semibold text-gray-800 text-base sm:text-lg leading-tight flex-1">
-                                {habit.name}
-                              </h3>
+                                {isChecked ? (
+                                  <span className="text-lg font-semibold text-white">
+                                    ✓
+                                  </span>
+                                ) : habit.reminderTime ? (
+                                  <span className="text-lg font-semibold text-gray-600 group-hover:text-white transition-all duration-300">
+                                    ⏰
+                                  </span>
+                                ) : (
+                                  <Target className="w-5 h-5 text-gray-600 group-hover:text-white transition-all duration-300" />
+                                )}
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <h3 className="font-bold text-gray-800 text-lg leading-tight">
+                                  {habit.name}
+                                </h3>
+                              </div>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   navigate(`/habit/${habit.id}`);
                                 }}
-                                className="p-1.5 rounded-full hover:bg-gray-200 transition-colors opacity-0 group-hover:opacity-100"
+                                className="p-1.5 rounded-lg hover:bg-white/80 backdrop-blur-sm transition-all duration-200 opacity-0 group-hover:opacity-100 shadow-sm flex-shrink-0"
                                 title="查看详情"
                               >
                                 <Info className="w-4 h-4 text-gray-500" />
                               </button>
                             </div>
+                          </div>
+
+                          {/* 底部区域：打卡状态或提醒时间 */}
+                          <div className="mt-auto">
                             {(() => {
                               const todayLogsCount = getTodayLogs(
                                 habit.id
                               ).length;
                               if (todayLogsCount > 0) {
                                 return (
-                                  <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-1">
-                                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                                      <p className="text-sm text-green-600 font-medium">
-                                        已打卡 {checkinTime}
-                                      </p>
+                                  <div className="space-y-2">
+                                    <div className="bg-green-50/80 backdrop-blur-sm rounded-lg p-2 border border-green-200/50">
+                                      <div className="flex items-center justify-between">
+                                        <div className="flex items-center space-x-2">
+                                          <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                          <p className="text-xs text-green-700 font-semibold">
+                                            {checkinTime}
+                                          </p>
+                                        </div>
+                                        <span className="text-xs text-green-600 bg-green-200/60 px-2 py-0.5 rounded-full font-bold">
+                                          {todayLogsCount}次
+                                        </span>
+                                      </div>
                                     </div>
-                                    <span className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded-full font-medium">
-                                      今日 {todayLogsCount} 次
-                                    </span>
                                   </div>
                                 );
                               } else {
-                                return null;
+                                return (
+                                  <div className="bg-gray-50/80 backdrop-blur-sm rounded-lg p-2 border border-gray-200/50">
+                                    {habit.reminderTime ? (
+                                      <div className="flex items-center justify-between text-gray-500">
+                                        <div className="flex items-center space-x-2">
+                                          <div className="w-1.5 h-1.5 bg-[#FF5A5F] rounded-full"></div>
+                                          <span className="text-xs font-medium">
+                                            {habit.reminderTime}
+                                          </span>
+                                        </div>
+                                        <span className="text-xs text-gray-400">
+                                          记得打卡哦
+                                        </span>
+                                      </div>
+                                    ) : (
+                                      <div className="flex items-center justify-center text-gray-400">
+                                        <div className="w-1.5 h-1.5 bg-gray-300 rounded-full mr-2"></div>
+                                        <span className="text-xs font-medium">
+                                          记得打卡哦
+                                        </span>
+                                      </div>
+                                    )}
+                                  </div>
+                                );
                               }
                             })()}
                           </div>
                         </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
 
           {/* 显示没有习惯的目标提示 */}
           {categoriesWithoutHabits.length > 0 && (
-            <div className="card p-6 sm:p-8 bg-gradient-to-br from-gray-50 to-gray-100">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-2xl flex items-center justify-center">
-                  <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-                </div>
-                <div>
-                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
-                    待添加习惯的目标
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-500">
-                    您有 {categoriesWithoutHabits.length} 个目标还没有添加习惯
-                  </p>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {categoriesWithoutHabits.map((category) => (
-                  <div
-                    key={category.id}
-                    className="p-4 bg-white rounded-xl border-2 border-dashed border-gray-300 hover:border-amber-400 transition-all duration-200"
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="font-medium text-gray-800">
-                        {category.name}
-                      </h3>
-                      <Target className="w-5 h-5 text-gray-400" />
-                    </div>
-                    <p className="text-sm text-gray-500 mb-4">
-                      还没有习惯，点击添加
+            <div className="mt-6">
+              <div className="bg-gradient-to-br from-amber-50 via-orange-50/20 to-yellow-50/30 rounded-2xl border border-amber-200/60 shadow-sm p-4 sm:p-5">
+                <div className="flex items-center space-x-3 mb-4">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center">
+                    <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+                  </div>
+                  <div>
+                    <h2 className="text-lg sm:text-xl font-semibold text-gray-800">
+                      待添加习惯的目标
+                    </h2>
+                    <p className="text-sm sm:text-base text-gray-500">
+                      您有 {categoriesWithoutHabits.length} 个目标还没有添加习惯
                     </p>
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => navigate("/management")}
-                        className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-colors"
-                      >
-                        <Plus className="w-4 h-4" />
-                        <span>添加习惯</span>
-                      </button>
-                      {aiEnabled && (
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categoriesWithoutHabits.map((category) => (
+                    <div
+                      key={category.id}
+                      className="p-4 bg-white rounded-xl border-2 border-dashed border-gray-300 hover:border-amber-400 transition-all duration-200"
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <h3 className="font-medium text-gray-800">
+                          {category.name}
+                        </h3>
+                        <Target className="w-5 h-5 text-gray-400" />
+                      </div>
+                      <p className="text-sm text-gray-500 mb-4">
+                        还没有习惯，点击添加
+                      </p>
+                      <div className="flex space-x-2">
                         <button
                           onClick={() => navigate("/management")}
-                          className="inline-flex items-center justify-center px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-colors"
-                          title="AI 生成习惯"
+                          className="flex-1 inline-flex items-center justify-center space-x-1 px-3 py-2 bg-amber-500 text-white text-sm rounded-lg hover:bg-amber-600 transition-colors"
                         >
-                          <Brain className="w-4 h-4" />
+                          <Plus className="w-4 h-4" />
+                          <span>添加习惯</span>
                         </button>
-                      )}
+                        {aiEnabled && (
+                          <button
+                            onClick={() => navigate("/management")}
+                            className="inline-flex items-center justify-center px-3 py-2 bg-purple-500 text-white text-sm rounded-lg hover:bg-purple-600 transition-colors"
+                            title="AI 生成习惯"
+                          >
+                            <Brain className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
 
-              <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
-                <div className="flex items-start space-x-2">
-                  <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-                  <div className="text-sm text-amber-700">
-                    <p className="font-medium mb-1">小贴士：</p>
-                    <p>
-                      每个目标可以添加多个习惯，建议从简单的开始，逐步养成。
-                      {aiEnabled && " 您也可以使用 AI 生成个性化的习惯建议。"}
-                    </p>
+                <div className="mt-6 p-4 bg-amber-50 rounded-xl border border-amber-200">
+                  <div className="flex items-start space-x-2">
+                    <Info className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                    <div className="text-sm text-amber-700">
+                      <p className="font-medium mb-1">小贴士：</p>
+                      <p>
+                        每个目标可以添加多个习惯，建议从简单的开始，逐步养成。
+                        {aiEnabled && " 您也可以使用 AI 生成个性化的习惯建议。"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>

@@ -24,6 +24,8 @@ export interface HabitLog {
   habitId: string;
   timestamp: number;
   note: string;
+  isMakeup?: boolean; // 是否为补卡
+  originalDate?: number; // 原本应该打卡的日期（仅补卡时有效）
 }
 
 /**

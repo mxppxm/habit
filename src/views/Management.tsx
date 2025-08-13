@@ -66,7 +66,7 @@ const TimePicker: React.FC<{
       <button
         type="button"
         onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 text-left flex items-center justify-between bg-white"
+        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 text-left flex items-center justify-between bg-white hover:border-gray-300"
       >
         <div className="flex items-center space-x-2">
           <Clock className="w-5 h-5 text-gray-400" />
@@ -82,11 +82,14 @@ const TimePicker: React.FC<{
       </button>
 
       {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-[60] p-4">
+        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-[9999] p-4 max-w-sm">
+          <div className="mb-3 text-center">
+            <p className="text-sm text-gray-600">选择提醒时间</p>
+          </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="text-sm font-medium text-gray-700 mb-2">小时</p>
-              <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-lg custom-scrollbar">
+              <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-lg">
                 {hours.map((h) => (
                   <button
                     key={h}
@@ -104,7 +107,7 @@ const TimePicker: React.FC<{
             </div>
             <div>
               <p className="text-sm font-medium text-gray-700 mb-2">分钟</p>
-              <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-lg custom-scrollbar">
+              <div className="max-h-32 overflow-y-auto border border-gray-100 rounded-lg">
                 {minutes
                   .filter((_, i) => i % 5 === 0)
                   .map((m) => (
@@ -122,6 +125,17 @@ const TimePicker: React.FC<{
                   ))}
               </div>
             </div>
+          </div>
+          <div className="mt-3 text-center">
+            <button
+              onClick={() => {
+                onChange("");
+                setIsOpen(false);
+              }}
+              className="text-sm text-gray-500 hover:text-gray-700 transition-colors"
+            >
+              清除提醒时间
+            </button>
           </div>
         </div>
       )}

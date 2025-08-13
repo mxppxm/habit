@@ -48,6 +48,11 @@ interface HabitStore {
   updateHabitCategory: (id: string, categoryId: string) => Promise<void>;
   deleteHabit: (id: string) => Promise<void>;
   checkinHabit: (habitId: string, note: string) => Promise<void>;
+  makeupCheckinHabit: (
+    habitId: string,
+    note: string,
+    originalDate: Date
+  ) => Promise<void>;
   deleteHabitLog: (logId: string) => Promise<void>;
   updateHabitLog: (logId: string, note: string) => Promise<void>;
   updateUserName: (name: string) => void;
@@ -203,6 +208,22 @@ export const useHabitStore = create<HabitStore>()(
             habitId,
             timestamp: Date.now(),
             note,
+          };
+          await addData("habitLogs", newHabitLog);
+          set((state) => ({ habitLogs: [...state.habitLogs, newHabitLog] }));
+        } catch (error: any) {
+          set({ error: error.message });
+        }
+      },
+      makeupCheckinHabit: async (habitId, note, originalDate) => {
+        try {
+          const newHabitLog: HabitLog = {
+            id: uuidv4(),
+            habitId,
+            timestamp: Date.now(), // 当前时间
+            note,
+            isMakeup: true,
+            originalDate: originalDate.getTime(), // 原本应该打卡的日期
           };
           await addData("habitLogs", newHabitLog);
           set((state) => ({ habitLogs: [...state.habitLogs, newHabitLog] }));

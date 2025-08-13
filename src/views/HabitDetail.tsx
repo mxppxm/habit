@@ -16,6 +16,8 @@ import {
   Target,
   CheckCircle2,
   AlertTriangle,
+  RotateCcw,
+  CalendarDays,
 } from "lucide-react";
 import dayjs from "dayjs";
 
@@ -27,6 +29,7 @@ const HabitDetail: React.FC = () => {
     categories,
     habitLogs,
     checkinHabit,
+    makeupCheckinHabit,
     deleteHabitLog,
     updateHabitLog,
   } = useHabitStore();
@@ -35,6 +38,11 @@ const HabitDetail: React.FC = () => {
   const [editNote, setEditNote] = useState("");
   const [newNote, setNewNote] = useState("");
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [showMakeupDialog, setShowMakeupDialog] = useState(false);
+  const [makeupNote, setMakeupNote] = useState("");
+  const [selectedMakeupDate, setSelectedMakeupDate] = useState<Date>(
+    new Date()
+  );
   const [showCalendarModal, setShowCalendarModal] = useState(false);
   const [calendarModalTitle, setCalendarModalTitle] = useState("");
   const [filteredLogs, setFilteredLogs] = useState<typeof logs>([]);
@@ -57,7 +65,11 @@ const HabitDetail: React.FC = () => {
 
   // 按日期分组打卡记录
   const logsByDate = logs.reduce((acc, log) => {
-    const date = dayjs(log.timestamp).format("YYYY-MM-DD");
+    // 对于补卡记录，使用原始日期；对于正常打卡，使用实际时间
+    const date =
+      log.isMakeup && log.originalDate
+        ? dayjs(log.originalDate).format("YYYY-MM-DD")
+        : dayjs(log.timestamp).format("YYYY-MM-DD");
     if (!acc[date]) {
       acc[date] = [];
     }
@@ -117,6 +129,36 @@ const HabitDetail: React.FC = () => {
       setNewNote("");
       setShowAddDialog(false);
     }
+  };
+
+  const handleMakeupCheckin = async () => {
+    if (makeupNote.trim() || makeupNote === "") {
+      await makeupCheckinHabit(habitId!, makeupNote, selectedMakeupDate);
+      setMakeupNote("");
+      setShowMakeupDialog(false);
+    }
+  };
+
+  // 获取可以补卡的日期（前一周）
+  const getAvailableMakeupDates = () => {
+    const today = dayjs();
+    const oneWeekAgo = today.subtract(7, "day");
+    const dates = [];
+
+    for (let i = 1; i <= 7; i++) {
+      const date = today.subtract(i, "day");
+      // 检查当天是否已经有打卡记录（包括补卡）
+      const hasLog = logs.some((log) => {
+        const logDate = dayjs(log.originalDate || log.timestamp);
+        return logDate.format("YYYY-MM-DD") === date.format("YYYY-MM-DD");
+      });
+
+      if (!hasLog) {
+        dates.push(date.toDate());
+      }
+    }
+
+    return dates;
   };
 
   const handleEditLog = (log: any) => {
@@ -312,14 +354,25 @@ const HabitDetail: React.FC = () => {
           <h2 className="text-xl sm:text-2xl font-semibold text-gray-800">
             打卡记录
           </h2>
-          <button
-            onClick={() => setShowAddDialog(true)}
-            className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
-          >
-            <Plus className="w-4 h-4" />
-            <span className="hidden sm:inline">新增打卡</span>
-            <span className="sm:hidden">新增</span>
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowMakeupDialog(true)}
+              className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
+              disabled={getAvailableMakeupDates().length === 0}
+            >
+              <RotateCcw className="w-4 h-4" />
+              <span className="hidden sm:inline">补卡</span>
+              <span className="sm:hidden">补卡</span>
+            </button>
+            <button
+              onClick={() => setShowAddDialog(true)}
+              className="inline-flex items-center space-x-2 px-3 sm:px-4 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-all duration-200 shadow-md hover:shadow-lg text-sm sm:text-base"
+            >
+              <Plus className="w-4 h-4" />
+              <span className="hidden sm:inline">新增打卡</span>
+              <span className="sm:hidden">新增</span>
+            </button>
+          </div>
         </div>
 
         {sortedDates.length > 0 ? (
@@ -352,10 +405,22 @@ const HabitDetail: React.FC = () => {
                     .map((log) => (
                       <div
                         key={log.id}
-                        className="group flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                        className={`group flex items-start space-x-3 sm:space-x-4 p-3 sm:p-4 rounded-lg hover:bg-gray-100 transition-colors ${
+                          log.isMakeup
+                            ? "bg-orange-50 border border-orange-200"
+                            : "bg-gray-50"
+                        }`}
                       >
-                        <div className="text-xs sm:text-sm text-gray-500 min-w-12 sm:min-w-16">
-                          {dayjs(log.timestamp).format("HH:mm")}
+                        <div className="flex flex-col items-center space-y-1">
+                          <div className="text-xs sm:text-sm text-gray-500 min-w-12 sm:min-w-16">
+                            {dayjs(log.timestamp).format("HH:mm")}
+                          </div>
+                          {log.isMakeup && (
+                            <div className="flex items-center space-x-1 text-xs text-orange-600 bg-orange-100 px-1.5 py-0.5 rounded-full">
+                              <RotateCcw className="w-3 h-3" />
+                              <span>补卡</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1">
                           {editingLog === log.id ? (
@@ -494,6 +559,98 @@ const HabitDetail: React.FC = () => {
                 className="px-6 py-2.5 bg-[#FF5A5F] text-white rounded-xl hover:bg-pink-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg"
               >
                 确认打卡
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
+
+      {/* 补卡弹窗 */}
+      <Dialog.Root open={showMakeupDialog} onOpenChange={setShowMakeupDialog}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50" />
+          <Dialog.Content className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md mx-4 shadow-2xl z-50">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center space-x-3">
+                <div className="w-10 h-10 bg-orange-100 rounded-full flex items-center justify-center">
+                  <RotateCcw className="w-5 h-5 text-orange-600" />
+                </div>
+                <Dialog.Title className="text-2xl font-semibold text-gray-800">
+                  补卡
+                </Dialog.Title>
+              </div>
+              <Dialog.Close asChild>
+                <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
+                  <X className="w-5 h-5 text-gray-500" />
+                </button>
+              </Dialog.Close>
+            </div>
+
+            <div className="space-y-4">
+              {getAvailableMakeupDates().length > 0 ? (
+                <>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-3">
+                      选择补卡日期
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {getAvailableMakeupDates().map((date) => (
+                        <button
+                          key={date.toISOString()}
+                          onClick={() => setSelectedMakeupDate(date)}
+                          className={`px-3 py-2 rounded-lg border text-sm transition-all duration-200 ${
+                            selectedMakeupDate.toDateString() ===
+                            date.toDateString()
+                              ? "border-orange-500 bg-orange-50 text-orange-700"
+                              : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="text-center">
+                            <div className="font-medium">
+                              {dayjs(date).format("MM/DD")}
+                            </div>
+                            <div className="text-xs text-gray-500">
+                              {dayjs(date).format("ddd")}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      补卡备注
+                    </label>
+                    <textarea
+                      value={makeupNote}
+                      onChange={(e) => setMakeupNote(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent outline-none transition-all duration-200 resize-none"
+                      placeholder="说明一下为什么要补卡..."
+                      rows={2}
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="text-center py-4 text-gray-500">
+                  <CalendarDays className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                  <p className="text-sm">前一周内没有可补卡的日期</p>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end space-x-3 mt-6">
+              <Dialog.Close asChild>
+                <button className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium">
+                  取消
+                </button>
+              </Dialog.Close>
+              <button
+                onClick={handleMakeupCheckin}
+                disabled={getAvailableMakeupDates().length === 0}
+                className="px-6 py-2.5 bg-orange-500 text-white rounded-xl hover:bg-orange-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                确认补卡
               </button>
             </div>
           </Dialog.Content>
