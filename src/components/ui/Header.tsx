@@ -234,15 +234,15 @@ export const Header: React.FC = () => {
                   fontSize: isMobile ? 20 : 30,
                   fontWeight: "bold",
                 }}
-                className={`flip-clock-custom ${urgencyLevel}`}
+                className={`flip-clock-custom ${urgencyLevel || 'normal'}`}
               />
               <span
                 className={`text-xs font-medium ${
                   urgencyLevel === "urgent"
-                    ? "text-red-600"
+                    ? "text-red-500"
                     : urgencyLevel === "warning"
-                    ? "text-orange-600"
-                    : "text-green-600"
+                    ? "text-orange-500"
+                    : "text-green-500"
                 }`}
               >
                 <span className="hidden sm:inline">今日剩余</span>
