@@ -129,12 +129,18 @@ export const useHabitStore = create<HabitStore>()(
       },
       updateCategory: async (id, name) => {
         try {
-          await putData("categories", { id, name });
-          set((state) => ({
-            categories: state.categories.map((c) =>
-              c.id === id ? { id, name } : c
-            ),
-          }));
+          const category = useHabitStore
+            .getState()
+            .categories.find((c) => c.id === id);
+          if (category) {
+            const updatedCategory = { ...category, name };
+            await putData("categories", updatedCategory);
+            set((state) => ({
+              categories: state.categories.map((c) =>
+                c.id === id ? updatedCategory : c
+              ),
+            }));
+          }
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -173,12 +179,18 @@ export const useHabitStore = create<HabitStore>()(
       },
       updateHabit: async (id, name, reminderTime) => {
         try {
-          await putData("habits", { id, name, reminderTime });
-          set((state) => ({
-            habits: state.habits.map((h) =>
-              h.id === id ? { ...h, name, reminderTime } : h
-            ),
-          }));
+          const habit = useHabitStore
+            .getState()
+            .habits.find((h) => h.id === id);
+          if (habit) {
+            const updatedHabit = { ...habit, name, reminderTime };
+            await putData("habits", updatedHabit);
+            set((state) => ({
+              habits: state.habits.map((h) =>
+                h.id === id ? updatedHabit : h
+              ),
+            }));
+          }
         } catch (error: any) {
           set({ error: error.message });
         }

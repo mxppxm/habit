@@ -634,7 +634,15 @@ const Management: React.FC = () => {
     if (editHabit) {
       // 编辑模式，只处理单个习惯
       if (!habitName.trim() || !selectedCategory) return;
+      
+      // 如果目标发生变化，需要更新categoryId
+      if (editHabit.categoryId !== selectedCategory) {
+        await updateHabitCategory(editHabit.id, selectedCategory);
+      }
+      
+      // 更新习惯名称和提醒时间
       await updateHabit(editHabit.id, habitName, reminderTime);
+      
       setEditHabit(null);
       setHabitName("");
       setSelectedCategory("");
