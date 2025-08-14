@@ -5,255 +5,30 @@ import { useNavigate } from "react-router-dom";
 import { formatShortcut } from "../hooks/useKeyboardShortcuts";
 import { EnhancedDialog } from "../components/ui/EnhancedDialog";
 import { AIHabitsDialog } from "../components/ui/AIHabitsDialog";
+import { TimePicker } from "../components/ui/TimePicker";
+import { CategorySelector } from "../components/ui/CategorySelector";
+import { CategoryCard } from "../components/management/CategoryCard";
+import { HabitCard } from "../components/management/HabitCard";
+import { CategoryDialog } from "../components/management/CategoryDialog";
+import { HabitDialog } from "../components/management/HabitDialog";
+import { DeleteConfirmDialog } from "../components/management/DeleteConfirmDialog";
 import { useAI } from "../hooks/useAI";
 import type { AIHabitSuggestion } from "../types";
 import {
   Plus,
   X,
-  Edit2,
-  Trash2,
-  Clock,
-  ChevronDown,
-  Tag,
-  Info,
+  FolderOpen,
+  Archive,
   CheckSquare,
   Square,
-  FolderOpen,
   Target,
-  Archive,
+  Trash2,
+  Edit2,
+  Info,
+  Clock,
   Brain,
 } from "lucide-react";
 
-// 自定义时间选择器组件
-const TimePicker: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-}> = ({ value, onChange }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const hours = Array.from({ length: 24 }, (_, i) =>
-    i.toString().padStart(2, "0")
-  );
-  const minutes = Array.from({ length: 60 }, (_, i) =>
-    i.toString().padStart(2, "0")
-  );
-
-  // 获取当前时间作为默认值
-  const getCurrentTime = () => {
-    const now = new Date();
-    const currentHour = now.getHours().toString().padStart(2, "0");
-    const currentMinute = now.getMinutes().toString().padStart(2, "0");
-    return [currentHour, currentMinute];
-  };
-
-  const [hour, minute] = value ? value.split(":") : getCurrentTime();
-
-  const handleTimeChange = (newHour: string, newMinute: string) => {
-    onChange(`${newHour}:${newMinute}`);
-    setIsOpen(false);
-  };
-
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => setIsOpen(true)}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 text-left flex items-center justify-between bg-white hover:border-gray-300"
-      >
-        <div className="flex items-center space-x-2">
-          <Clock className="w-5 h-5 text-gray-400" />
-          <span className={value ? "text-gray-900" : "text-gray-400"}>
-            {value || `不设置提醒时间 (当前: ${getCurrentTime().join(":")})`}
-          </span>
-        </div>
-        <ChevronDown className="w-5 h-5 text-gray-400" />
-      </button>
-
-      {/* 时间选择弹窗 */}
-      <EnhancedDialog
-        open={isOpen}
-        onOpenChange={setIsOpen}
-        className="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 w-full max-w-sm mx-4 shadow-2xl z-[100000]"
-      >
-        <div className="flex items-center justify-between mb-6">
-          <Dialog.Title className="text-xl font-semibold text-gray-800">
-            选择提醒时间
-          </Dialog.Title>
-          <Dialog.Close asChild>
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors duration-200">
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
-          </Dialog.Close>
-        </div>
-
-        <div className="space-y-4">
-          <div className="text-center mb-4">
-            <div className="inline-flex items-center space-x-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-full text-sm">
-              <Clock className="w-4 h-4" />
-              <span>当前时间: {getCurrentTime().join(":")}</span>
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-3">小时</p>
-              <div className="max-h-40 overflow-y-auto border border-gray-100 rounded-lg">
-                {hours.map((h) => (
-                  <button
-                    key={h}
-                    onClick={() => handleTimeChange(h, minute)}
-                    className={`w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors text-sm ${
-                      h === hour
-                        ? "bg-[#FF5A5F] text-white hover:bg-[#FF5A5F]"
-                        : ""
-                    }`}
-                  >
-                    {h}
-                  </button>
-                ))}
-              </div>
-            </div>
-            <div>
-              <p className="text-sm font-medium text-gray-700 mb-3">分钟</p>
-              <div className="max-h-40 overflow-y-auto border border-gray-100 rounded-lg">
-                {minutes
-                  .filter((_, i) => i % 5 === 0)
-                  .map((m) => (
-                    <button
-                      key={m}
-                      onClick={() => handleTimeChange(hour, m)}
-                      className={`w-full px-3 py-2 text-left hover:bg-gray-50 transition-colors text-sm ${
-                        m === minute
-                          ? "bg-[#FF5A5F] text-white hover:bg-[#FF5A5F]"
-                          : ""
-                      }`}
-                    >
-                      {m}
-                    </button>
-                  ))}
-              </div>
-            </div>
-          </div>
-
-          <div className="flex justify-center space-x-2 pt-4 border-t border-gray-200">
-            <button
-              onClick={() => {
-                onChange("");
-                setIsOpen(false);
-              }}
-              className="px-3 py-2 text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors duration-200 text-sm"
-            >
-              清除时间
-            </button>
-            <button
-              onClick={() => {
-                const [currentHour, currentMinute] = getCurrentTime();
-                onChange(`${currentHour}:${currentMinute}`);
-                setIsOpen(false);
-              }}
-              className="px-3 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors duration-200 text-sm"
-            >
-              当前时间
-            </button>
-            <button
-              onClick={() => setIsOpen(false)}
-              className="px-3 py-2 bg-[#FF5A5F] text-white rounded-lg hover:bg-pink-600 transition-colors duration-200 text-sm"
-            >
-              确定
-            </button>
-          </div>
-        </div>
-      </EnhancedDialog>
-    </>
-  );
-};
-
-// 自定义目标选择器组件
-const CategorySelector: React.FC<{
-  value: string;
-  onChange: (value: string) => void;
-  categories: { id: string; name: string }[];
-  placeholder?: string;
-}> = ({ value, onChange, categories, placeholder = "请选择目标" }) => {
-  const [isOpen, setIsOpen] = useState(false);
-
-  const selectedCategory = categories.find((cat) => cat.id === value);
-
-  // 关闭下拉菜单当点击外部时
-  React.useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as Element;
-      if (!target.closest(".category-selector-container")) {
-        setIsOpen(false);
-      }
-    };
-
-    if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
-      return () =>
-        document.removeEventListener("mousedown", handleClickOutside);
-    }
-  }, [isOpen]);
-
-  return (
-    <div className="relative category-selector-container">
-      <button
-        type="button"
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-[#FF5A5F] focus:border-transparent outline-none transition-all duration-200 text-left flex items-center justify-between bg-white"
-      >
-        <div className="flex items-center space-x-2">
-          <Tag className="w-5 h-5 text-gray-400" />
-          <span
-            className={selectedCategory ? "text-gray-900" : "text-gray-400"}
-          >
-            {selectedCategory ? selectedCategory.name : placeholder}
-          </span>
-        </div>
-        <ChevronDown
-          className={`w-5 h-5 text-gray-400 transition-transform duration-200 ${
-            isOpen ? "rotate-180" : ""
-          }`}
-        />
-      </button>
-
-      {isOpen && (
-        <div className="absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-[60] max-h-60 overflow-hidden">
-          {categories.length > 0 ? (
-            <div className="py-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => {
-                    onChange(category.id);
-                    setIsOpen(false);
-                  }}
-                  className={`w-full px-4 py-3 text-left hover:bg-gray-50 transition-colors flex items-center space-x-3 ${
-                    category.id === value
-                      ? "bg-[#FF5A5F] text-white hover:bg-[#FF5A5F]"
-                      : ""
-                  }`}
-                >
-                  <div
-                    className={`w-3 h-3 rounded-full ${
-                      category.id === value ? "bg-white" : "bg-[#FF5A5F]"
-                    }`}
-                  ></div>
-                  <span className="font-medium">{category.name}</span>
-                </button>
-              ))}
-            </div>
-          ) : (
-            <div className="py-8 text-center text-gray-500">
-              <Tag className="w-8 h-8 mx-auto mb-2 text-gray-300" />
-              <p className="text-sm">暂无目标</p>
-              <p className="text-xs text-gray-400">请先创建目标</p>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-};
 
 const Management: React.FC = () => {
   const navigate = useNavigate();
