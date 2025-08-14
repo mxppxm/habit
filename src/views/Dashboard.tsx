@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { useHabitStore } from "../stores/useHabitStore";
-import { useNotification } from "../hooks/useNotification";
+
 import { formatShortcut } from "../hooks/useKeyboardShortcuts";
 import { EnhancedDialog } from "../components/ui/EnhancedDialog";
 import * as Dialog from "@radix-ui/react-dialog";
@@ -26,8 +26,7 @@ const Dashboard: React.FC = () => {
 
   const navigate = useNavigate();
 
-  // 使用通知提醒 Hook
-  useNotification(habits);
+  // 通知服务已在 AppInitializer 中启用，这里不需要重复调用
 
   // 注意：快捷键由 EnhancedDialog 组件处理，这里不需要重复监听
 

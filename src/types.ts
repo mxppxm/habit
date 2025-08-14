@@ -45,3 +45,11 @@ export interface AIHabitSuggestion {
 export interface AIHabitsResponse {
   habits: AIHabitSuggestion[];
 }
+
+/**
+ * 每日提醒设置数据结构
+ */
+export interface DailyReminderSettings {
+  enabled: boolean;
+  time: string; // HH:mm 格式
+}

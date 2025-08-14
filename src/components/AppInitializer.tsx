@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useHabitStore } from "../stores/useHabitStore";
+import { useNotification } from "../hooks/useNotification";
 
 interface AppInitializerProps {
   children: React.ReactNode;
@@ -10,8 +11,11 @@ interface AppInitializerProps {
  * 负责在应用启动时加载所有必要的数据
  */
 export const AppInitializer: React.FC<AppInitializerProps> = ({ children }) => {
-  const { init, loading, error } = useHabitStore();
+  const { init, loading, error, habits, dailyReminder } = useHabitStore();
   const [initialized, setInitialized] = useState(false);
+
+  // 启用通知服务
+  useNotification(habits, dailyReminder);
 
   useEffect(() => {
     const initializeApp = async () => {

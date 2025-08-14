@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Habit } from "../types";
+import { Habit, DailyReminderSettings } from "../types";
 import dayjs from "dayjs";
 
 /**
@@ -26,10 +26,15 @@ export const requestPermission = async (): Promise<NotificationPermission> => {
 /**
  * 通知提醒 Hook
  * @param habits 习惯列表
+ * @param dailyReminder 每日提醒设置
  */
-export const useNotification = (habits: Habit[]) => {
+export const useNotification = (
+  habits: Habit[],
+  dailyReminder: DailyReminderSettings
+) => {
   const intervalRef = useRef<number | null>(null);
   const notifiedTodayRef = useRef<Set<string>>(new Set());
+  const dailyNotifiedRef = useRef<boolean>(false);
 
   useEffect(() => {
     // 请求通知权限
@@ -40,6 +45,7 @@ export const useNotification = (habits: Habit[]) => {
       const now = dayjs();
       if (now.hour() === 0 && now.minute() === 0) {
         notifiedTodayRef.current.clear();
+        dailyNotifiedRef.current = false;
       }
     };
 
@@ -48,6 +54,25 @@ export const useNotification = (habits: Habit[]) => {
       const now = dayjs();
       const currentTime = now.format("HH:mm");
 
+      // 检查每日打卡提醒
+      if (
+        dailyReminder.enabled &&
+        dailyReminder.time === currentTime &&
+        !dailyNotifiedRef.current &&
+        Notification.permission === "granted"
+      ) {
+        // 发送每日打卡提醒
+        new Notification("每日打卡提醒", {
+          body: "该完成今天的习惯打卡了！坚持就是胜利 💪",
+          icon: "/favicon.svg",
+          tag: "daily-reminder",
+        });
+
+        // 标记为已通知
+        dailyNotifiedRef.current = true;
+      }
+
+      // 检查单个习惯提醒
       habits.forEach((habit) => {
         // 检查是否到了提醒时间且今天还未提醒过
         if (
@@ -59,7 +84,7 @@ export const useNotification = (habits: Habit[]) => {
           // 发送通知
           new Notification("习惯打卡提醒", {
             body: `是时候完成「${habit.name}」了！`,
-            icon: "/vite.svg",
+            icon: "/favicon.svg",
             tag: habit.id,
           });
 
@@ -85,5 +110,5 @@ export const useNotification = (habits: Habit[]) => {
         intervalRef.current = null;
       }
     };
-  }, [habits]);
+  }, [habits, dailyReminder]);
 };

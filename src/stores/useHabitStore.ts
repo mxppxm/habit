@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { Category, Habit, HabitLog } from "../types";
+import { Category, Habit, HabitLog, DailyReminderSettings } from "../types";
 import { v4 as uuidv4 } from "uuid";
 import {
   initDB,
@@ -21,6 +21,8 @@ interface HabitStore {
   error: string | null;
   aiEnabled: boolean;
   apiKey: string;
+  // 每日提醒设置
+  dailyReminder: DailyReminderSettings;
   // 同步相关状态
   syncEnabled: boolean;
   syncUserId: string;
@@ -58,6 +60,8 @@ interface HabitStore {
   updateUserName: (name: string) => void;
   setAIEnabled: (enabled: boolean) => void;
   setApiKey: (key: string) => void;
+  setDailyReminderEnabled: (enabled: boolean) => void;
+  setDailyReminderTime: (time: string) => void;
   clearAll: () => Promise<void>;
 
   // 同步相关方法
@@ -82,6 +86,11 @@ export const useHabitStore = create<HabitStore>()(
       error: null,
       aiEnabled: false,
       apiKey: "",
+      // 每日提醒默认设置
+      dailyReminder: {
+        enabled: true,
+        time: "20:00",
+      },
       // 同步相关初始状态
       syncEnabled: false,
       syncUserId: "",
@@ -268,6 +277,16 @@ export const useHabitStore = create<HabitStore>()(
       setApiKey: (key) => {
         set({ apiKey: key });
       },
+      setDailyReminderEnabled: (enabled) => {
+        set((state) => ({
+          dailyReminder: { ...state.dailyReminder, enabled },
+        }));
+      },
+      setDailyReminderTime: (time) => {
+        set((state) => ({
+          dailyReminder: { ...state.dailyReminder, time },
+        }));
+      },
       clearAll: async () => {
         try {
           await clearAllData();
@@ -278,6 +297,7 @@ export const useHabitStore = create<HabitStore>()(
             userName: "亲爱的朋友", // 重置用户名为默认值
             aiEnabled: false, // 重置AI功能为默认值
             apiKey: "", // 重置API Key
+            dailyReminder: { enabled: true, time: "20:00" }, // 重置提醒设置为默认值
           });
         } catch (error: any) {
           set({ error: error.message });
@@ -425,6 +445,7 @@ export const useHabitStore = create<HabitStore>()(
         userName: state.userName,
         aiEnabled: state.aiEnabled,
         apiKey: state.apiKey,
+        dailyReminder: state.dailyReminder,
         syncEnabled: state.syncEnabled,
         syncUserId: state.syncUserId,
         lastSyncTime: state.lastSyncTime,
