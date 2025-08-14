@@ -31,7 +31,7 @@ export const MainLayout: React.FC = () => {
   );
 
   return (
-    <div className="min-h-screen bg-[#F7F7F7]">
+    <div className="min-h-screen bg-[#F7F7F7] flex flex-col">
       {/* 顶部时间展示 */}
       <Header />
 
@@ -76,8 +76,10 @@ export const MainLayout: React.FC = () => {
       </nav>
 
       {/* 内容区域 */}
-      <main className="max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-        <Outlet />
+      <main className="flex-1 max-w-7xl mx-auto px-3 sm:px-4 py-4 sm:py-8 w-full">
+        <div className="h-full">
+          <Outlet />
+        </div>
       </main>
 
       {/* 键盘快捷键帮助 */}
