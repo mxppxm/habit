@@ -7,15 +7,15 @@ interface DeleteTarget {
   type: "category" | "habit";
   id: string;
   name: string;
-  relatedCount: number;
+  relatedCount?: number;
 }
 
 interface DeleteConfirmDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   deleteTarget: DeleteTarget | null;
+  habitLogs?: any[];
   onConfirm: () => void;
-  onCancel: () => void;
 }
 
 export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
@@ -23,7 +23,6 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
   onOpenChange,
   deleteTarget,
   onConfirm,
-  onCancel,
 }) => {
   return (
     <EnhancedDialog
@@ -60,7 +59,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
                   <p className="text-red-700 mb-3">
                     此目标包含{" "}
                     <span className="font-semibold">
-                      {deleteTarget.relatedCount}
+                      {deleteTarget.relatedCount || 0}
                     </span>{" "}
                     个习惯。
                   </p>
@@ -88,7 +87,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
                   <p className="text-orange-700 mb-3">
                     此习惯已有{" "}
                     <span className="font-semibold">
-                      {deleteTarget.relatedCount}
+                      {deleteTarget.relatedCount || 0}
                     </span>{" "}
                     次打卡记录。
                   </p>
@@ -107,7 +106,7 @@ export const DeleteConfirmDialog: React.FC<DeleteConfirmDialogProps> = ({
 
       <div className="flex justify-end space-x-3">
         <button
-          onClick={onCancel}
+          onClick={() => onOpenChange(false)}
           className="px-6 py-2.5 text-gray-600 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors duration-200 font-medium"
         >
           取消
