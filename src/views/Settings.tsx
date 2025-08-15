@@ -72,9 +72,9 @@ const Settings: React.FC = () => {
       {/* AI 功能设置 */}
       <AISettings
         aiEnabled={aiEnabled}
-        onAIEnabledChange={setAIEnabled}
+        setAIEnabled={setAIEnabled}
         apiKey={apiKey}
-        onApiKeyChange={setApiKey}
+        setApiKey={setApiKey}
       />
 
       {/* 数据导入导出 */}
