@@ -14,6 +14,12 @@ export interface Habit {
   categoryId: string;
   name: string;
   reminderTime?: string; // HH:mm 格式，可选
+  // 来自 AI 的描述与元信息（若适用）
+  description?: string;
+  isAIGenerated?: boolean;
+  aiDifficulty?: "简单" | "中等" | "困难";
+  aiFrequency?: string;
+  aiTips?: string;
 }
 
 /**

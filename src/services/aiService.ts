@@ -154,3 +154,49 @@ export function getExampleHabits(goalName: string): AIHabitsResponse {
 
   return { habits: baseHabits };
 }
+
+/**
+ * 轻量测试 API Key 的可用性（联通性）
+ * 不产生实际业务消耗，仅请求一个极小的对象结构
+ */
+export async function testAIConnectivity(
+  apiKey: string
+): Promise<{ ok: boolean; message: string }> {
+  try {
+    const google = createGoogleGenerativeAI({ apiKey });
+    const schema = z.object({ pong: z.literal("pong") });
+
+    const result = await streamObject({
+      model: google("gemini-2.0-flash-exp"),
+      schema,
+      prompt: '请只返回一个 JSON 对象：{ "pong": "pong" }，不要包含多余文本。',
+    });
+
+    let finalObject: { pong?: string } | null = null;
+    for await (const partialObject of result.partialObjectStream) {
+      if (partialObject) {
+        finalObject = partialObject as { pong?: string };
+      }
+    }
+
+    const data = finalObject;
+    if (data && data.pong === "pong") {
+      return { ok: true, message: "联通性正常" };
+    }
+    return { ok: false, message: "返回结果异常，请稍后重试" };
+  } catch (err) {
+    if (err instanceof Error) {
+      if (err.message.includes("API key")) {
+        return { ok: false, message: "API 密钥无效或权限不足" };
+      }
+      if (err.message.includes("quota")) {
+        return { ok: false, message: "API 配额不足或已用完" };
+      }
+      if (err.message.includes("network")) {
+        return { ok: false, message: "网络连接错误，请检查网络" };
+      }
+      return { ok: false, message: `测试失败：${err.message}` };
+    }
+    return { ok: false, message: "测试失败，请稍后重试" };
+  }
+}

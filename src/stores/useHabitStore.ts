@@ -2,6 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { Category, Habit, HabitLog, DailyReminderSettings } from "../types";
 import { v4 as uuidv4 } from "uuid";
+import dayjs from "dayjs";
 import {
   initDB,
   getAllData,
@@ -30,6 +31,11 @@ interface HabitStore {
   isSyncing: boolean;
   syncError: string | null;
   isOnline: boolean;
+  // 显示设置
+  showDashboardAIIcon: boolean;
+
+  // 今日目标庆祝标记：categoryId -> YYYY-MM-DD
+  categoryDailyCelebrated: Record<string, string>;
 
   init: () => Promise<void>;
   addCategory: (name: string) => Promise<void>;
@@ -60,6 +66,7 @@ interface HabitStore {
   updateUserName: (name: string) => void;
   setAIEnabled: (enabled: boolean) => void;
   setApiKey: (key: string) => void;
+  setShowDashboardAIIcon: (enabled: boolean) => void;
   setDailyReminderEnabled: (enabled: boolean) => void;
   setDailyReminderTime: (time: string) => void;
   clearAll: () => Promise<void>;
@@ -71,6 +78,10 @@ interface HabitStore {
   syncFromCloud: () => Promise<void>;
   enableAutoSync: () => void;
   disableAutoSync: () => void;
+
+  // 目标完成庆祝相关
+  hasCategoryCelebratedToday: (categoryId: string) => boolean;
+  markCategoryCelebratedToday: (categoryId: string) => void;
 }
 
 let autoSyncUnsubscribe: (() => void) | null = null;
@@ -86,6 +97,8 @@ export const useHabitStore = create<HabitStore>()(
       error: null,
       aiEnabled: false,
       apiKey: "",
+      showDashboardAIIcon: false,
+      categoryDailyCelebrated: {},
       // 每日提醒默认设置
       dailyReminder: {
         enabled: true,
@@ -186,9 +199,7 @@ export const useHabitStore = create<HabitStore>()(
             const updatedHabit = { ...habit, name, reminderTime };
             await putData("habits", updatedHabit);
             set((state) => ({
-              habits: state.habits.map((h) =>
-                h.id === id ? updatedHabit : h
-              ),
+              habits: state.habits.map((h) => (h.id === id ? updatedHabit : h)),
             }));
           }
         } catch (error: any) {
@@ -254,10 +265,47 @@ export const useHabitStore = create<HabitStore>()(
       },
       deleteHabitLog: async (logId) => {
         try {
+          const stateBefore = get();
+          const existingLog = stateBefore.habitLogs.find((l) => l.id === logId);
+
           await deleteData("habitLogs", logId);
-          set((state) => ({
-            habitLogs: state.habitLogs.filter((log) => log.id !== logId),
-          }));
+
+          set((state) => {
+            const updatedLogs = state.habitLogs.filter(
+              (log) => log.id !== logId
+            );
+
+            // 如果该分类今天已被标记庆祝，则检查删除后是否仍然“全部完成”
+            if (existingLog) {
+              const affectedHabit = state.habits.find(
+                (h) => h.id === existingLog.habitId
+              );
+              if (affectedHabit) {
+                const categoryId = affectedHabit.categoryId;
+                const today = dayjs().startOf("day");
+                const categoryHabits = state.habits.filter(
+                  (h) => h.categoryId === categoryId
+                );
+                const allDoneTodayAfterDeletion = categoryHabits.every((h) =>
+                  updatedLogs.some(
+                    (log) =>
+                      log.habitId === h.id &&
+                      dayjs(log.timestamp).isSame(today, "day")
+                  )
+                );
+                if (!allDoneTodayAfterDeletion) {
+                  const nextCelebrated = { ...state.categoryDailyCelebrated };
+                  delete nextCelebrated[categoryId];
+                  return {
+                    habitLogs: updatedLogs,
+                    categoryDailyCelebrated: nextCelebrated,
+                  } as Partial<HabitStore>;
+                }
+              }
+            }
+
+            return { habitLogs: updatedLogs } as Partial<HabitStore>;
+          });
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -289,6 +337,9 @@ export const useHabitStore = create<HabitStore>()(
       setApiKey: (key) => {
         set({ apiKey: key });
       },
+      setShowDashboardAIIcon: (enabled) => {
+        set({ showDashboardAIIcon: enabled });
+      },
       setDailyReminderEnabled: (enabled) => {
         set((state) => ({
           dailyReminder: { ...state.dailyReminder, enabled },
@@ -310,6 +361,7 @@ export const useHabitStore = create<HabitStore>()(
             aiEnabled: false, // 重置AI功能为默认值
             apiKey: "", // 重置API Key
             dailyReminder: { enabled: true, time: "20:00" }, // 重置提醒设置为默认值
+            categoryDailyCelebrated: {},
           });
         } catch (error: any) {
           set({ error: error.message });
@@ -449,6 +501,17 @@ export const useHabitStore = create<HabitStore>()(
           autoSyncUnsubscribe = null;
         }
       },
+
+      hasCategoryCelebratedToday: (categoryId: string) => {
+        const today = dayjs().format("YYYY-MM-DD");
+        const map = get().categoryDailyCelebrated;
+        return map[categoryId] === today;
+      },
+      markCategoryCelebratedToday: (categoryId: string) => {
+        const today = dayjs().format("YYYY-MM-DD");
+        const prev = get().categoryDailyCelebrated;
+        set({ categoryDailyCelebrated: { ...prev, [categoryId]: today } });
+      },
     }),
     {
       name: "habit-store",
@@ -457,10 +520,12 @@ export const useHabitStore = create<HabitStore>()(
         userName: state.userName,
         aiEnabled: state.aiEnabled,
         apiKey: state.apiKey,
+        showDashboardAIIcon: state.showDashboardAIIcon,
         dailyReminder: state.dailyReminder,
         syncEnabled: state.syncEnabled,
         syncUserId: state.syncUserId,
         lastSyncTime: state.lastSyncTime,
+        categoryDailyCelebrated: state.categoryDailyCelebrated,
       }),
     }
   )

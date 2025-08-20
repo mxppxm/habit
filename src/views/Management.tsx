@@ -8,24 +8,42 @@ import { BatchMoveDialog } from "../components/management/BatchMoveDialog";
 import { CategorySection } from "../components/management/CategorySection";
 import { HabitSection } from "../components/management/HabitSection";
 import { useBatchOperations } from "../hooks/useBatchOperations";
+import { v4 as uuidv4 } from "uuid";
+import type { Habit } from "../types";
 import { useAI } from "../hooks/useAI";
 import type { AIHabitSuggestion } from "../types";
 
 const Management: React.FC = () => {
-  const { categories, addCategory, updateCategory, deleteCategory } = useHabitStore();
-  const { habits, addHabit, updateHabit, deleteHabit, updateHabitCategory } = useHabitStore();
+  const { categories, addCategory, updateCategory, deleteCategory } =
+    useHabitStore();
+  const {
+    habits,
+    addHabit,
+    insertHabit,
+    updateHabit,
+    deleteHabit,
+    updateHabitCategory,
+  } = useHabitStore();
   const { aiEnabled, apiKey, habitLogs } = useHabitStore();
-  
+
   // 使用自定义批量操作 hook
   const categoryBatch = useBatchOperations();
   const habitBatch = useBatchOperations();
 
-  // 目标筛选状态
-  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<string | null>(null);
-  
+  // 目标筛选状态（使用 URL 参数持久化，返回后不丢失）
+  const initialFilterParam = new URLSearchParams(window.location.search).get(
+    "category"
+  );
+  const [selectedCategoryFilter, setSelectedCategoryFilter] = useState<
+    string | null
+  >(initialFilterParam);
+
   // 对话框状态
   const [categoryDialogOpen, setCategoryDialogOpen] = useState(false);
-  const [editCategory, setEditCategory] = useState<{ id: string; name: string } | null>(null);
+  const [editCategory, setEditCategory] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [habitDialogOpen, setHabitDialogOpen] = useState(false);
   const [editHabit, setEditHabit] = useState<any>(null);
 
@@ -52,9 +70,20 @@ const Management: React.FC = () => {
   // 处理目标点击筛选
   const handleCategoryClick = (categoryId: string) => {
     if (categoryBatch.categoryBatchMode || habitBatch.habitBatchMode) return;
-    setSelectedCategoryFilter(
-      selectedCategoryFilter === categoryId ? null : categoryId
-    );
+    const next = selectedCategoryFilter === categoryId ? null : categoryId;
+    setSelectedCategoryFilter(next);
+    // 仅当有筛选时通过 pushState 记录，便于原生后退返回状态
+    const params = new URLSearchParams(window.location.search);
+    if (next) {
+      params.set("category", next);
+      const query = params.toString();
+      const nextUrl = `${window.location.pathname}${query ? `?${query}` : ""}`;
+      window.history.pushState({ category: next }, "", nextUrl);
+    } else {
+      // 清空筛选时恢复到无查询参数的 URL，同时记录历史
+      const nextUrl = window.location.pathname;
+      window.history.pushState({}, "", nextUrl);
+    }
   };
 
   // 获取筛选后的习惯列表
@@ -64,6 +93,13 @@ const Management: React.FC = () => {
 
   // 快捷键处理
   useEffect(() => {
+    const onPopState = () => {
+      const current = new URLSearchParams(window.location.search).get(
+        "category"
+      );
+      setSelectedCategoryFilter(current);
+    };
+    window.addEventListener("popstate", onPopState);
     const handleKeyDown = (e: KeyboardEvent) => {
       if (categoryBatch.categoryBatchMode || habitBatch.habitBatchMode) {
         // Ctrl+A 全选
@@ -78,9 +114,15 @@ const Management: React.FC = () => {
         // Delete 删除选中项
         else if (e.key === "Delete") {
           e.preventDefault();
-          if (categoryBatch.categoryBatchMode && categoryBatch.selectedCategories.size > 0) {
+          if (
+            categoryBatch.categoryBatchMode &&
+            categoryBatch.selectedCategories.size > 0
+          ) {
             categoryBatch.handleBatchDeleteCategories();
-          } else if (habitBatch.habitBatchMode && habitBatch.selectedHabits.size > 0) {
+          } else if (
+            habitBatch.habitBatchMode &&
+            habitBatch.selectedHabits.size > 0
+          ) {
             habitBatch.handleBatchDeleteHabits();
           }
         }
@@ -97,12 +139,11 @@ const Management: React.FC = () => {
     };
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
-  }, [
-    categoryBatch,
-    habitBatch,
-    filteredHabits,
-  ]);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("popstate", onPopState);
+    };
+  }, [categoryBatch, habitBatch, filteredHabits]);
 
   // 处理对话框打开
   const openAddCategoryDialog = () => {
@@ -164,7 +205,24 @@ const Management: React.FC = () => {
 
     try {
       for (const habitName of selectedHabitNames) {
-        await addHabit(targetCategory.id, habitName, "");
+        const suggestion = aiHabits?.find((h) => h.name === habitName);
+        if (suggestion) {
+          const newHabit: Habit = {
+            id: uuidv4(),
+            categoryId: targetCategory.id,
+            name: suggestion.name,
+            reminderTime: "",
+            description: suggestion.description,
+            isAIGenerated: true,
+            aiDifficulty: suggestion.difficulty,
+            aiFrequency: suggestion.frequency,
+            aiTips: suggestion.tips,
+          };
+          await insertHabit(newHabit);
+        } else {
+          // 回退：只存名称
+          await addHabit(targetCategory.id, habitName, "");
+        }
       }
 
       // 重置状态
@@ -249,7 +307,10 @@ const Management: React.FC = () => {
     }
   };
 
-  const handleCategorySubmit = async (categories: string[], editId?: string) => {
+  const handleCategorySubmit = async (
+    categories: string[],
+    editId?: string
+  ) => {
     if (editId && editCategory) {
       await updateCategory(editId, categories[0]);
       setEditCategory(null);
@@ -319,7 +380,11 @@ const Management: React.FC = () => {
         onDeleteHabit={handleDeleteHabit}
         onBatchDelete={habitBatch.handleBatchDeleteHabits}
         onBatchMove={() => habitBatch.setBatchDialogOpen(true)}
-        onClearFilter={() => setSelectedCategoryFilter(null)}
+        onClearFilter={() => {
+          setSelectedCategoryFilter(null);
+          const nextUrl = window.location.pathname;
+          window.history.pushState({}, "", nextUrl);
+        }}
       />
 
       {/* 对话框 */}

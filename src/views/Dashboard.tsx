@@ -7,6 +7,8 @@ import * as Dialog from "@radix-ui/react-dialog";
 import { Plus, X, Target, Info, Sparkles, Brain } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import dayjs from "dayjs";
+import Celebration from "../components/ui/Celebration";
+import { useToastContext } from "../components/ui/ToastContainer";
 
 /**
  * 首页组件 - 显示所有习惯项目并支持打卡
@@ -20,9 +22,18 @@ const Dashboard: React.FC = () => {
     deleteHabitLog,
     loading,
     aiEnabled,
+    showDashboardAIIcon,
+    hasCategoryCelebratedToday,
+    markCategoryCelebratedToday,
   } = useHabitStore();
   const [selectedHabitId, setSelectedHabitId] = useState<string | null>(null);
   const [note, setNote] = useState("");
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [bursts, setBursts] = useState<
+    Array<{ id: string; x: number; y: number; durationMs?: number }>
+  >([]);
+  const celebrationDurationMs = 5200;
+  const toast = useToastContext();
 
   const navigate = useNavigate();
 
@@ -33,11 +44,73 @@ const Dashboard: React.FC = () => {
   /**
    * 处理打卡
    */
-  const handleCheckin = async () => {
+  const triggerGrandCelebrationIfNeeded = (habitId: string) => {
+    const habit = habits.find((h) => h.id === habitId);
+    if (!habit) return;
+    const categoryId = habit.categoryId;
+    const categoryHabits = habits.filter((h) => h.categoryId === categoryId);
+    // 使用最新的日志数据，避免刚打卡后读取到旧值
+    const freshLogs = useHabitStore.getState().habitLogs;
+    const today = dayjs().startOf("day");
+    const allDoneToday = categoryHabits.every((h) =>
+      freshLogs.some(
+        (log) =>
+          log.habitId === h.id && dayjs(log.timestamp).isSame(today, "day")
+      )
+    );
+    if (allDoneToday && !hasCategoryCelebratedToday(categoryId)) {
+      markCategoryCelebratedToday(categoryId);
+      const centerX = window.innerWidth / 2;
+      const centerY = window.innerHeight * 0.35;
+      const points = [
+        { x: centerX, y: centerY },
+        { x: centerX - 180, y: centerY + 40 },
+        { x: centerX + 180, y: centerY + 40 },
+      ];
+      const ids: string[] = [];
+      points.forEach((p) => {
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        ids.push(id);
+        setBursts((prev) => [
+          ...prev,
+          { id, x: p.x, y: p.y, durationMs: celebrationDurationMs * 0.6 },
+        ]);
+      });
+      window.setTimeout(() => {
+        setBursts((prev) => prev.filter((b) => !ids.includes(b.id)));
+      }, celebrationDurationMs);
+
+      const categoryName =
+        categories.find((c) => c.id === categoryId)?.name || "目标";
+      toast.show({
+        title: "目标达成",
+        message: `恭喜！已完成「${categoryName}」的全部习惯 🎉`,
+      });
+    }
+  };
+
+  const handleCheckin = async (event?: React.MouseEvent) => {
     if (selectedHabitId) {
       await checkinHabit(selectedHabitId, note);
       setSelectedHabitId(null);
       setNote("");
+      setShowCelebration(true);
+      window.setTimeout(() => setShowCelebration(false), celebrationDurationMs);
+      // 统一：弹窗确认也展示点击位置爆发与轻提示
+      if (event) {
+        const x = event.clientX;
+        const y = event.clientY;
+        const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+        setBursts((prev) => [
+          ...prev,
+          { id, x, y, durationMs: celebrationDurationMs * 0.45 },
+        ]);
+        window.setTimeout(() => {
+          setBursts((prev) => prev.filter((b) => b.id !== id));
+        }, celebrationDurationMs);
+      }
+      toast.show({ message: "打卡成功", variant: "success" });
+      triggerGrandCelebrationIfNeeded(selectedHabitId);
     }
   };
 
@@ -52,6 +125,25 @@ const Dashboard: React.FC = () => {
       event.stopPropagation(); // 阻止卡片点击事件
     }
     await checkinHabit(habitId, "");
+    setShowCelebration(true);
+    // 基于点击位置添加一次爆发（并发显示，提升实时感）
+    if (event) {
+      const x = event.clientX;
+      const y = event.clientY;
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      setBursts((prev) => [
+        ...prev,
+        { id, x, y, durationMs: celebrationDurationMs * 0.45 },
+      ]);
+      window.setTimeout(() => {
+        setBursts((prev) => prev.filter((b) => b.id !== id));
+      }, celebrationDurationMs);
+    }
+    window.setTimeout(() => setShowCelebration(false), celebrationDurationMs);
+    toast.show({ message: "打卡成功", variant: "success" });
+
+    // 外部图标一键打卡后也检测目标全部完成，触发盛大庆祝与 toast
+    triggerGrandCelebrationIfNeeded(habitId);
   };
 
   /**
@@ -128,6 +220,11 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="min-h-screen">
+      <Celebration
+        visible={showCelebration || bursts.length > 0}
+        durationMs={celebrationDurationMs}
+        bursts={bursts}
+      />
       {/* 显示有习惯的目标 - 方格状布局 */}
       {categories.length > 0 && (
         <>
@@ -138,6 +235,10 @@ const Dashboard: React.FC = () => {
               );
 
               if (categoryHabits.length === 0) return null;
+
+              const remainingCount = categoryHabits.filter(
+                (h) => !isCheckedToday(h.id)
+              ).length;
 
               return (
                 <div
@@ -156,6 +257,17 @@ const Dashboard: React.FC = () => {
                       <span className="text-xs text-gray-500 bg-white/70 backdrop-blur-sm px-2.5 py-1 rounded-full font-medium">
                         {categoryHabits.length} 个习惯
                       </span>
+                      <span
+                        className={
+                          `text-xs px-2.5 py-1 rounded-full font-bold border ` +
+                          (remainingCount > 0
+                            ? "bg-rose-50 text-rose-600 border-rose-200"
+                            : "bg-emerald-50 text-emerald-600 border-emerald-200")
+                        }
+                        title="剩余待打卡习惯数"
+                      >
+                        待打卡 {remainingCount}
+                      </span>
                     </div>
                   </div>
 
@@ -170,7 +282,7 @@ const Dashboard: React.FC = () => {
                           key={habit.id}
                           onClick={() => setSelectedHabitId(habit.id)}
                           className={`
-                        group p-3 sm:p-4 rounded-2xl cursor-pointer transition-all duration-300 transform hover:scale-[1.02] relative overflow-hidden flex flex-col
+                        group p-3 sm:p-4 rounded-2xl cursor-pointer transition-all duration-300 transform hover:scale-[1.02] relative overflow-visible flex flex-col
                         ${
                           isChecked
                             ? "bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200/60 shadow-md hover:shadow-lg"
@@ -203,9 +315,55 @@ const Dashboard: React.FC = () => {
                                 )}
                               </div>
                               <div className="flex-1 min-w-0">
-                                <h3 className="font-bold text-gray-800 text-lg leading-tight">
-                                  {habit.name}
-                                </h3>
+                                <div className="flex items-center space-x-2">
+                                  <h3 className="font-bold text-gray-800 text-lg leading-tight truncate">
+                                    {habit.name}
+                                  </h3>
+                                  {showDashboardAIIcon &&
+                                    habit.isAIGenerated && (
+                                      <div className="relative group/ai flex-shrink-0">
+                                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] sm:text-xs">
+                                          <Brain className="w-3 h-3 mr-1" /> AI
+                                        </span>
+                                        <div className="absolute left-0 bottom-6 z-30 w-72 sm:w-80 p-3 rounded-lg bg-white shadow-xl border border-gray-200 opacity-0 invisible group-hover/ai:opacity-100 group-hover/ai:visible transition-all">
+                                          {habit.description && (
+                                            <p className="text-xs sm:text-sm text-gray-700 leading-relaxed">
+                                              {habit.description}
+                                            </p>
+                                          )}
+                                          <div className="flex flex-wrap gap-2 mt-2">
+                                            {habit.aiDifficulty && (
+                                              <span
+                                                className={`px-2 py-0.5 text-[11px] rounded-full border font-medium ${
+                                                  habit.aiDifficulty === "简单"
+                                                    ? "bg-green-100 text-green-700 border-green-200"
+                                                    : habit.aiDifficulty ===
+                                                      "中等"
+                                                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                                                    : "bg-red-100 text-red-700 border-red-200"
+                                                }`}
+                                              >
+                                                难度：{habit.aiDifficulty}
+                                              </span>
+                                            )}
+                                            {habit.aiFrequency && (
+                                              <span className="px-2 py-0.5 text-[11px] rounded-full border bg-indigo-100 text-indigo-700 border-indigo-200 font-medium">
+                                                频率：{habit.aiFrequency}
+                                              </span>
+                                            )}
+                                          </div>
+                                          {habit.aiTips && (
+                                            <div className="mt-2 text-[11px] text-gray-600">
+                                              <span className="font-medium text-gray-700">
+                                                小贴士：
+                                              </span>
+                                              <span>{habit.aiTips}</span>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    )}
+                                </div>
                               </div>
                               <button
                                 onClick={(e) => {
@@ -456,7 +614,7 @@ const Dashboard: React.FC = () => {
                         </button>
                       </Dialog.Close>
                       <button
-                        onClick={handleCheckin}
+                        onClick={(e) => handleCheckin(e)}
                         className="px-6 py-2.5 bg-[#FF5A5F] text-white rounded-xl hover:bg-pink-600 transition-colors duration-200 font-medium shadow-md hover:shadow-lg relative group"
                       >
                         继续打卡

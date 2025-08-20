@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { validateApiKey } from "../../services/aiService";
+import { validateApiKey, testAIConnectivity } from "../../services/aiService";
 import { Brain, Zap, Key, Eye, EyeOff, Save, Check } from "lucide-react";
 
 interface AISettingsProps {
@@ -7,6 +7,8 @@ interface AISettingsProps {
   setAIEnabled: (enabled: boolean) => void;
   apiKey: string;
   setApiKey: (key: string) => void;
+  showDashboardAIIcon?: boolean;
+  setShowDashboardAIIcon?: (enabled: boolean) => void;
 }
 
 export const AISettings: React.FC<AISettingsProps> = ({
@@ -14,15 +16,32 @@ export const AISettings: React.FC<AISettingsProps> = ({
   setAIEnabled,
   apiKey,
   setApiKey,
+  showDashboardAIIcon,
+  setShowDashboardAIIcon,
 }) => {
   const [tempApiKey, setTempApiKey] = useState(apiKey);
   const [showApiKey, setShowApiKey] = useState(false);
   const [apiKeySaved, setApiKeySaved] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<string | null>(null);
 
   const handleSaveApiKey = () => {
     setApiKey(tempApiKey);
     setApiKeySaved(true);
     setTimeout(() => setApiKeySaved(false), 2000);
+  };
+
+  const handleTestConnectivity = async () => {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const { ok, message } = await testAIConnectivity(tempApiKey || apiKey);
+      setTestResult(ok ? `✅ ${message}` : `❌ ${message}`);
+    } catch (e) {
+      setTestResult("❌ 测试失败，请稍后重试");
+    } finally {
+      setTesting(false);
+    }
   };
 
   return (
@@ -49,8 +68,7 @@ export const AISettings: React.FC<AISettingsProps> = ({
               <span>AI 智能习惯生成</span>
             </h3>
             <p className="text-sm text-gray-600 mt-1">
-              开启后，在目标管理页面会显示"🧠
-              AI生成"按钮，可生成个性化习惯建议
+              开启后，在目标管理页面会显示"🧠 AI生成"按钮，可生成个性化习惯建议
             </p>
           </div>
           <button
@@ -62,6 +80,32 @@ export const AISettings: React.FC<AISettingsProps> = ({
             <span
               className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                 aiEnabled ? "translate-x-6" : "translate-x-1"
+              }`}
+            />
+          </button>
+        </div>
+
+        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-xl">
+          <div className="flex-1">
+            <h3 className="text-lg font-medium text-gray-800">
+              首页显示 AI 图标
+            </h3>
+            <p className="text-sm text-gray-600 mt-1">
+              控制首页习惯卡片是否展示 AI 标签（默认关闭）
+            </p>
+          </div>
+          <button
+            onClick={() =>
+              setShowDashboardAIIcon &&
+              setShowDashboardAIIcon(!(showDashboardAIIcon ?? false))
+            }
+            className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${
+              showDashboardAIIcon ? "bg-purple-600" : "bg-gray-300"
+            }`}
+          >
+            <span
+              className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                showDashboardAIIcon ? "translate-x-6" : "translate-x-1"
               }`}
             />
           </button>
@@ -81,9 +125,7 @@ export const AISettings: React.FC<AISettingsProps> = ({
                   <ul className="text-sm text-purple-700 space-y-1">
                     <li>• 在管理页面的目标卡片上会显示"🧠 AI生成"按钮</li>
                     <li>• 点击后可根据目标生成10个个性化习惯建议</li>
-                    <li>
-                      • 支持配置 Google Gemini API Key 获得更个性化的建议
-                    </li>
+                    <li>• 支持配置 Google Gemini API Key 获得更个性化的建议</li>
                     <li>• 未配置 API Key 时会使用通用示例</li>
                   </ul>
                 </div>
@@ -131,7 +173,7 @@ export const AISettings: React.FC<AISettingsProps> = ({
                     )}
                   </button>
                 </div>
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                   <p className="text-xs text-blue-600">
                     {tempApiKey && validateApiKey(tempApiKey)
                       ? "✓ API Key 格式正确"
@@ -139,30 +181,46 @@ export const AISettings: React.FC<AISettingsProps> = ({
                       ? "⚠ API Key 格式不正确"
                       : "请输入您的 API Key"}
                   </p>
-                  <button
-                    onClick={handleSaveApiKey}
-                    disabled={!tempApiKey || tempApiKey === apiKey}
-                    className={`inline-flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${
-                      apiKeySaved
-                        ? "bg-green-500 text-white"
-                        : !tempApiKey || tempApiKey === apiKey
-                        ? "bg-gray-200 text-gray-400 cursor-not-allowed"
-                        : "bg-blue-500 text-white hover:bg-blue-600"
-                    }`}
-                  >
-                    {apiKeySaved ? (
-                      <>
-                        <Check className="w-3 h-3" />
-                        <span>已保存</span>
-                      </>
-                    ) : (
-                      <>
-                        <Save className="w-3 h-3" />
-                        <span>保存 API Key</span>
-                      </>
-                    )}
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleTestConnectivity}
+                      disabled={testing || !(tempApiKey || apiKey)}
+                      className={`inline-flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        testing || !(tempApiKey || apiKey)
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-purple-500 text-white hover:bg-purple-600"
+                      }`}
+                    >
+                      <span>{testing ? "测试中..." : "测试联通性"}</span>
+                    </button>
+                    <button
+                      onClick={handleSaveApiKey}
+                      disabled={!tempApiKey || tempApiKey === apiKey}
+                      className={`inline-flex items-center space-x-1 px-3 py-1.5 text-xs rounded-lg transition-colors ${
+                        apiKeySaved
+                          ? "bg-green-500 text-white"
+                          : !tempApiKey || tempApiKey === apiKey
+                          ? "bg-gray-200 text-gray-400 cursor-not-allowed"
+                          : "bg-blue-500 text-white hover:bg-blue-600"
+                      }`}
+                    >
+                      {apiKeySaved ? (
+                        <>
+                          <Check className="w-3 h-3" />
+                          <span>已保存</span>
+                        </>
+                      ) : (
+                        <>
+                          <Save className="w-3 h-3" />
+                          <span>保存 API Key</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
+                {testResult && (
+                  <p className="text-xs mt-1 text-blue-700">{testResult}</p>
+                )}
                 <div className="bg-blue-100 rounded-lg p-3">
                   <div className="flex items-start space-x-2">
                     <Key className="w-4 h-4 text-blue-600 mt-0.5 flex-shrink-0" />

@@ -16,8 +16,10 @@ const Settings: React.FC = () => {
     setAIEnabled,
     apiKey,
     setApiKey,
+    showDashboardAIIcon,
+    setShowDashboardAIIcon,
   } = useHabitStore();
-  
+
   const [syncDialogOpen, setSyncDialogOpen] = useState(false);
 
   return (
@@ -75,6 +77,8 @@ const Settings: React.FC = () => {
         setAIEnabled={setAIEnabled}
         apiKey={apiKey}
         setApiKey={setApiKey}
+        showDashboardAIIcon={showDashboardAIIcon}
+        setShowDashboardAIIcon={setShowDashboardAIIcon}
       />
 
       {/* 数据导入导出 */}

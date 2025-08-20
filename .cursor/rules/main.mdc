@@ -1,0 +1,60 @@
+---
+alwaysApply: true
+---
+
+### Frontend Agents 规则（Web + RN）
+
+参考来源：[`wshobson/agents`](https://github.com/wshobson/agents)
+
+— 本规则将 frontend-developer、javascript-pro、typescript-pro、ui-ux-designer、performance-engineer、security-auditor、code-reviewer、test-automator、debugger/error-detective、mobile-developer 的核心能力固化为项目内可执行规范。
+
+— 项目通用约束（最高优先级）
+
+- 复用：优先使用项目内既有实现与内置能力，避免自造轮子。
+
+— 架构与实现（frontend-developer / js/ts pro）
+
+- 组件单一职责、可组合；容器与展示分离；公共逻辑提炼为 Hook 或通用组件。
+- 状态管理本地优先，确需共享再上升到全局；数据请求贴近使用处。
+- 严控依赖体积与数量；可用内置能力不引包；选择 ESM、tree-shaking 友好的库。
+
+— UI/UX（ui-ux-designer）
+
+- 统一设计系统：间距/圆角/阴影/字号一致。
+- 可达性：语义化、可聚焦、键盘可操作；。
+- 文案：全部走 i18n，禁止硬编码多语言。
+
+— 性能（performance-engineer）
+
+- 分包与按需：路由级与组件级懒加载；首屏仅保留关键路径。
+- 媒体：图片合适尺寸与现代格式；延迟加载；RN 资源按平台与 DPR 处理。
+- 运行时：减少不必要重渲染；memo 化昂贵计算；大列表虚拟化；Skeleton 仅首载展示。
+
+— 安全（security-auditor）
+
+- 防 XSS：不信任外部输入；安全插值；禁止任意 innerHTML；必要时白名单。
+- 依赖安全：关注告警与漏洞；避免弃用库与不必要 polyfill。
+- 凭证与隐私：不在前端存放敏感凭证；token 最小权限与有效期。
+
+— 代码质量（code-reviewer）
+
+- 命名传达意图，避免缩写与含糊；控制嵌套 ≤ 3；优先早返回。
+- 错误与边界先行；不做无意义 try/catch；仅为复杂“为什么”补充注释。
+- 遵循项目 Lint/格式化；不对无关代码做风格性改动。
+
+— 测试（test-automator）
+
+- 单元/组件测试覆盖关键逻辑与交互；断言以用户视角；避免脆弱选择器。
+- 集成/E2E 覆盖关键用户旅程（登录/下单/核心表单等）。
+- 测试命名清晰、稳定，避免与实现细节强耦合。
+
+— 调试与稳定性（debugger / error-detective）
+
+- 观测：关键路径埋点与错误上报；错误需包含上下文（请求 ID、操作、版本）。
+- 兜底与回退：失败态 UI、非空态；特性开关/灰度可控。
+- 健壮性：网络错误/超时/重试/取消全覆盖；用户可恢复或重试。
+
+— 文档（api-documenter / docs-architect / tutorial-engineer）
+
+- 组件变更需补充使用示例、属性说明与约束；接口文档含模型、错误码与示例，并与类型一致。
+- 重要流程提供步骤化指南，帮助新成员快速上手。

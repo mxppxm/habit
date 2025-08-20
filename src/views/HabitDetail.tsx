@@ -19,6 +19,7 @@ import {
   RotateCcw,
   CalendarDays,
 } from "lucide-react";
+import { Brain } from "lucide-react";
 import dayjs from "dayjs";
 
 const HabitDetail: React.FC = () => {
@@ -248,9 +249,16 @@ const HabitDetail: React.FC = () => {
         </button>
         <div className="flex-1 min-w-0">
           <div className="flex flex-col sm:flex-row sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
-            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 leading-tight">
-              {habit.name}
-            </h1>
+            <div className="flex items-center space-x-2">
+              <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-800 leading-tight">
+                {habit.name}
+              </h1>
+              {habit.isAIGenerated && (
+                <span className="inline-flex items-center px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs">
+                  <Brain className="w-4 h-4 mr-1" /> AI
+                </span>
+              )}
+            </div>
             {category && (
               <span className="inline-block px-2 sm:px-3 py-1 bg-[#FF5A5F] text-white text-xs sm:text-sm rounded-full flex-shrink-0">
                 {category.name}
@@ -271,6 +279,42 @@ const HabitDetail: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* AI 说明与备注 */}
+      {(habit.description ||
+        habit.aiTips ||
+        habit.aiFrequency ||
+        habit.aiDifficulty) && (
+        <div className="card p-4 sm:p-6">
+          <div className="flex items-center space-x-2 mb-2">
+            <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+              <Brain className="w-4 h-4 text-purple-700" />
+            </div>
+            <h2 className="text-lg font-semibold text-gray-800">AI 建议</h2>
+          </div>
+          {habit.description && (
+            <p className="text-gray-700 leading-relaxed">{habit.description}</p>
+          )}
+          <div className="flex flex-wrap gap-2 mt-3">
+            {habit.aiDifficulty && (
+              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+                难度：{habit.aiDifficulty}
+              </span>
+            )}
+            {habit.aiFrequency && (
+              <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-700">
+                建议频率：{habit.aiFrequency}
+              </span>
+            )}
+          </div>
+          {habit.aiTips && (
+            <div className="mt-3 text-sm text-gray-600">
+              <span className="font-medium text-gray-700">小贴士：</span>
+              <span>{habit.aiTips}</span>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* 统计卡片 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-6">
