@@ -11,7 +11,15 @@ import {
   deleteData,
   clearAllData,
 } from "../services/db";
-import { syncService } from "../services/syncService";
+import { leanCloudSyncService } from "../services/leanCloudSyncService";
+
+function deduplicateById<T extends { id: string }>(list: T[]): T[] {
+  const map = new Map<string, T>();
+  for (const item of list) {
+    map.set(item.id, item);
+  }
+  return Array.from(map.values());
+}
 
 interface HabitStore {
   categories: Category[];
@@ -26,11 +34,15 @@ interface HabitStore {
   dailyReminder: DailyReminderSettings;
   // 同步相关状态
   syncEnabled: boolean;
-  syncUserId: string;
+  // 单一提供者：LeanCloud
   lastSyncTime: number;
   isSyncing: boolean;
   syncError: string | null;
   isOnline: boolean;
+  // LeanCloud 认证状态
+  leanAuthenticated: boolean;
+  leanEmail: string;
+  leanUserId: string;
   // 显示设置
   showDashboardAIIcon: boolean;
 
@@ -73,11 +85,23 @@ interface HabitStore {
 
   // 同步相关方法
   setSyncEnabled: (enabled: boolean) => void;
-  setSyncUserId: (userId: string) => void;
   syncToCloud: () => Promise<void>;
   syncFromCloud: () => Promise<void>;
   enableAutoSync: () => void;
   disableAutoSync: () => void;
+  // 注销：清空云端数据
+  clearRemoteAndLogout: () => Promise<void>;
+  // 登录后引导检查
+  checkSyncOnboarding: () => Promise<{
+    remoteEmpty: boolean;
+    hasLocal: boolean;
+  }>;
+  // 合并去重并双向同步
+  mergeCloudAndLocal: () => Promise<void>;
+  repairCloudData: () => Promise<void>;
+  // LeanCloud 认证
+  leanRegisterOrLogin: (email: string, password: string) => Promise<void>;
+  leanLogout: () => Promise<void>;
 
   // 目标完成庆祝相关
   hasCategoryCelebratedToday: (categoryId: string) => boolean;
@@ -85,6 +109,101 @@ interface HabitStore {
 }
 
 let autoSyncUnsubscribe: (() => void) | null = null;
+let autoSyncTimer: number | null = null;
+
+function scheduleAutoSyncUp(): void {
+  const s = useHabitStore.getState();
+  if (!s.syncEnabled || !s.isOnline || !s.leanAuthenticated) return;
+  if (autoSyncTimer) {
+    window.clearTimeout(autoSyncTimer);
+  }
+  autoSyncTimer = window.setTimeout(async () => {
+    const state = useHabitStore.getState();
+    try {
+      const delta = buildDeltaFromQueue();
+      if (
+        delta.upserts.categories.length === 0 &&
+        delta.upserts.habits.length === 0 &&
+        delta.upserts.habitLogs.length === 0 &&
+        delta.deletes.categories.length === 0 &&
+        delta.deletes.habits.length === 0 &&
+        delta.deletes.habitLogs.length === 0
+      ) {
+        return;
+      }
+      await (leanCloudSyncService.deltaSync
+        ? leanCloudSyncService.deltaSync(delta)
+        : leanCloudSyncService.fullSyncUp({
+            categories: state.categories,
+            habits: state.habits,
+            habitLogs: state.habitLogs,
+          }));
+      clearDeltaQueues();
+      useHabitStore.setState({ lastSyncTime: Date.now() });
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : "自动同步失败";
+      useHabitStore.setState({ syncError: message });
+    }
+  }, 800);
+}
+
+// -------------------- 增量同步内存队列（不持久化） --------------------
+const upsertQueues = {
+  categories: new Map<string, Category>(),
+  habits: new Map<string, Habit>(),
+  habitLogs: new Map<string, HabitLog>(),
+};
+const deleteQueues = {
+  categories: new Set<string>(),
+  habits: new Set<string>(),
+  habitLogs: new Set<string>(),
+};
+
+function enqueueUpsert(
+  kind: "categories" | "habits" | "habitLogs",
+  item: Category | Habit | HabitLog
+): void {
+  // upsert 与 delete 冲突时，以 upsert 为准
+  // @ts-expect-error narrow at runtime
+  upsertQueues[kind].set((item as any).id, item);
+  // @ts-expect-error narrow at runtime
+  deleteQueues[kind].delete((item as any).id);
+}
+
+function enqueueDelete(
+  kind: "categories" | "habits" | "habitLogs",
+  id: string
+): void {
+  // delete 与 upsert 冲突时，以 delete 为准
+  // @ts-expect-error narrow at runtime
+  upsertQueues[kind].delete(id);
+  // @ts-expect-error narrow at runtime
+  deleteQueues[kind].add(id);
+}
+
+function buildDeltaFromQueue() {
+  return {
+    upserts: {
+      categories: Array.from(upsertQueues.categories.values()),
+      habits: Array.from(upsertQueues.habits.values()),
+      habitLogs: Array.from(upsertQueues.habitLogs.values()),
+    },
+    deletes: {
+      categories: Array.from(deleteQueues.categories.values()),
+      habits: Array.from(deleteQueues.habits.values()),
+      habitLogs: Array.from(deleteQueues.habitLogs.values()),
+    },
+  } as const;
+}
+
+function clearDeltaQueues(): void {
+  upsertQueues.categories.clear();
+  upsertQueues.habits.clear();
+  upsertQueues.habitLogs.clear();
+  deleteQueues.categories.clear();
+  deleteQueues.habits.clear();
+  deleteQueues.habitLogs.clear();
+}
 
 export const useHabitStore = create<HabitStore>()(
   persist(
@@ -104,13 +223,16 @@ export const useHabitStore = create<HabitStore>()(
         enabled: true,
         time: "20:00",
       },
-      // 同步相关初始状态
+      // 同步相关初始状态（LeanCloud 单一模式）
       syncEnabled: false,
-      syncUserId: "",
       lastSyncTime: 0,
       isSyncing: false,
       syncError: null,
       isOnline: navigator.onLine,
+      // LeanCloud 登录状态延迟到 provider 内部初始化后再更新
+      leanAuthenticated: false,
+      leanEmail: "",
+      leanUserId: "",
       init: async () => {
         try {
           set({ loading: true });
@@ -119,6 +241,29 @@ export const useHabitStore = create<HabitStore>()(
           const habits = await getAllData<Habit>("habits");
           const habitLogs = await getAllData<HabitLog>("habitLogs");
           set({ categories, habits, habitLogs, loading: false });
+
+          // 恢复 LeanCloud 登录态
+          const state = useHabitStore.getState();
+          const u = leanCloudSyncService.getCurrentUser?.();
+          if (u) {
+            set({
+              leanAuthenticated: true,
+              leanEmail: u.email,
+              leanUserId: u.userId,
+            });
+          }
+
+          const shouldSyncFromCloud =
+            state.syncEnabled && navigator.onLine && state.leanAuthenticated;
+
+          if (shouldSyncFromCloud) {
+            // 静默同步：若失败则忽略，不阻塞启动
+            try {
+              await useHabitStore.getState().syncFromCloud();
+            } catch (_e) {
+              // 忽略启动时的云端拉取错误，保持本地数据可用
+            }
+          }
         } catch (error: any) {
           set({ error: error.message, loading: false });
         }
@@ -127,7 +272,13 @@ export const useHabitStore = create<HabitStore>()(
         try {
           const newCategory: Category = { id: uuidv4(), name };
           await addData("categories", newCategory);
-          set((state) => ({ categories: [...state.categories, newCategory] }));
+          set((state) => {
+            const next = [...state.categories, newCategory];
+            const map = new Map(next.map((c) => [c.id, c]));
+            return { categories: Array.from(map.values()) };
+          });
+          enqueueUpsert("categories", newCategory);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -135,7 +286,13 @@ export const useHabitStore = create<HabitStore>()(
       insertCategory: async (category: Category) => {
         try {
           await addData("categories", category);
-          set((state) => ({ categories: [...state.categories, category] }));
+          set((state) => {
+            const next = [...state.categories, category];
+            const map = new Map(next.map((c) => [c.id, c]));
+            return { categories: Array.from(map.values()) };
+          });
+          enqueueUpsert("categories", category);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -153,6 +310,8 @@ export const useHabitStore = create<HabitStore>()(
                 c.id === id ? updatedCategory : c
               ),
             }));
+            enqueueUpsert("categories", updatedCategory);
+            scheduleAutoSyncUp();
           }
         } catch (error: any) {
           set({ error: error.message });
@@ -164,6 +323,8 @@ export const useHabitStore = create<HabitStore>()(
           set((state) => ({
             categories: state.categories.filter((c) => c.id !== id),
           }));
+          enqueueDelete("categories", id);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -177,7 +338,13 @@ export const useHabitStore = create<HabitStore>()(
             reminderTime,
           };
           await addData("habits", newHabit);
-          set((state) => ({ habits: [...state.habits, newHabit] }));
+          set((state) => {
+            const next = [...state.habits, newHabit];
+            const map = new Map(next.map((h) => [h.id, h]));
+            return { habits: Array.from(map.values()) };
+          });
+          enqueueUpsert("habits", newHabit);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -185,7 +352,13 @@ export const useHabitStore = create<HabitStore>()(
       insertHabit: async (habit: Habit) => {
         try {
           await addData("habits", habit);
-          set((state) => ({ habits: [...state.habits, habit] }));
+          set((state) => {
+            const next = [...state.habits, habit];
+            const map = new Map(next.map((h) => [h.id, h]));
+            return { habits: Array.from(map.values()) };
+          });
+          enqueueUpsert("habits", habit);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -201,6 +374,8 @@ export const useHabitStore = create<HabitStore>()(
             set((state) => ({
               habits: state.habits.map((h) => (h.id === id ? updatedHabit : h)),
             }));
+            enqueueUpsert("habits", updatedHabit);
+            scheduleAutoSyncUp();
           }
         } catch (error: any) {
           set({ error: error.message });
@@ -218,6 +393,8 @@ export const useHabitStore = create<HabitStore>()(
                 h.id === id ? { ...h, categoryId } : h
               ),
             }));
+            enqueueUpsert("habits", { ...habit, categoryId });
+            scheduleAutoSyncUp();
           }
         } catch (error: any) {
           set({ error: error.message });
@@ -229,6 +406,8 @@ export const useHabitStore = create<HabitStore>()(
           set((state) => ({
             habits: state.habits.filter((h) => h.id !== id),
           }));
+          enqueueDelete("habits", id);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -243,6 +422,8 @@ export const useHabitStore = create<HabitStore>()(
           };
           await addData("habitLogs", newHabitLog);
           set((state) => ({ habitLogs: [...state.habitLogs, newHabitLog] }));
+          enqueueUpsert("habitLogs", newHabitLog);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -259,6 +440,8 @@ export const useHabitStore = create<HabitStore>()(
           };
           await addData("habitLogs", newHabitLog);
           set((state) => ({ habitLogs: [...state.habitLogs, newHabitLog] }));
+          enqueueUpsert("habitLogs", newHabitLog);
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -304,8 +487,10 @@ export const useHabitStore = create<HabitStore>()(
               }
             }
 
+            enqueueDelete("habitLogs", logId);
             return { habitLogs: updatedLogs } as Partial<HabitStore>;
           });
+          scheduleAutoSyncUp();
         } catch (error: any) {
           set({ error: error.message });
         }
@@ -323,6 +508,8 @@ export const useHabitStore = create<HabitStore>()(
                 log.id === logId ? updatedLog : log
               ),
             }));
+            enqueueUpsert("habitLogs", updatedLog);
+            scheduleAutoSyncUp();
           }
         } catch (error: any) {
           set({ error: error.message });
@@ -371,31 +558,22 @@ export const useHabitStore = create<HabitStore>()(
       // 同步相关方法实现
       setSyncEnabled: (enabled: boolean) => {
         set({ syncEnabled: enabled });
-        if (enabled && get().syncUserId) {
+        if (enabled) {
           get().enableAutoSync();
         } else {
           get().disableAutoSync();
         }
       },
 
-      setSyncUserId: (userId: string) => {
-        set({ syncUserId: userId });
-        syncService.setUserId(userId);
-        if (get().syncEnabled && userId) {
-          get().enableAutoSync();
-        }
-      },
-
       syncToCloud: async () => {
         const state = get();
-        if (!state.syncEnabled || !state.syncUserId) {
-          throw new Error("同步功能未启用或用户ID未设置");
-        }
+        if (!state.syncEnabled) throw new Error("同步功能未启用");
+        if (!state.leanAuthenticated) throw new Error("请先登录 LeanCloud");
 
         try {
           set({ isSyncing: true, syncError: null });
 
-          await syncService.fullSyncUp({
+          await leanCloudSyncService.fullSyncUp({
             categories: state.categories,
             habits: state.habits,
             habitLogs: state.habitLogs,
@@ -416,14 +594,13 @@ export const useHabitStore = create<HabitStore>()(
 
       syncFromCloud: async () => {
         const state = get();
-        if (!state.syncEnabled || !state.syncUserId) {
-          throw new Error("同步功能未启用或用户ID未设置");
-        }
+        if (!state.syncEnabled) throw new Error("同步功能未启用");
+        if (!state.leanAuthenticated) throw new Error("请先登录 LeanCloud");
 
         try {
           set({ isSyncing: true, syncError: null });
 
-          const cloudData = await syncService.fullSyncDown();
+          const cloudData = await leanCloudSyncService.fullSyncDown();
 
           // 清空本地数据库
           await clearAllData();
@@ -456,11 +633,102 @@ export const useHabitStore = create<HabitStore>()(
         }
       },
 
+      // 登录后引导检查：判断云端是否为空、本地是否有数据
+      checkSyncOnboarding: async () => {
+        if (!get().leanAuthenticated) throw new Error("未登录");
+        const [cats, habs, logs] = await Promise.all([
+          getAllData<Category>("categories"),
+          getAllData<Habit>("habits"),
+          getAllData<HabitLog>("habitLogs"),
+        ]);
+        const hasLocal = cats.length + habs.length + logs.length > 0;
+        await leanCloudSyncService.repairCloudData?.();
+        const cloud = await leanCloudSyncService.fullSyncDown();
+        const remoteEmpty =
+          cloud.categories.length +
+            cloud.habits.length +
+            cloud.habitLogs.length ===
+          0;
+        return { remoteEmpty, hasLocal } as const;
+      },
+
+      // 合并去重并双向同步
+      mergeCloudAndLocal: async () => {
+        if (!get().leanAuthenticated) throw new Error("未登录");
+        try {
+          set({ isSyncing: true, syncError: null });
+          const cloud = await leanCloudSyncService.fullSyncDown();
+          const localCats = await getAllData<Category>("categories");
+          const localHabs = await getAllData<Habit>("habits");
+          const localLogs = await getAllData<HabitLog>("habitLogs");
+
+          const mapById = <T extends { id: string }>(a: T[], b: T[]) => {
+            const m = new Map<string, T>();
+            for (const x of a) m.set(x.id, x);
+            for (const y of b) if (!m.has(y.id)) m.set(y.id, y);
+            return Array.from(m.values());
+          };
+
+          const mergedCats = mapById(cloud.categories, localCats);
+          const mergedHabs = mapById(cloud.habits, localHabs);
+          const mergedLogs = mapById(cloud.habitLogs, localLogs);
+
+          // 覆盖本地
+          await clearAllData();
+          await Promise.all([
+            ...mergedCats.map((c) => addData("categories", c)),
+            ...mergedHabs.map((h) => addData("habits", h)),
+            ...mergedLogs.map((l) => addData("habitLogs", l)),
+          ]);
+          set({
+            categories: mergedCats,
+            habits: mergedHabs,
+            habitLogs: mergedLogs,
+          });
+
+          // 推送到云端（增量方式）
+          if (leanCloudSyncService.deltaSync) {
+            await leanCloudSyncService.deltaSync({
+              upserts: {
+                categories: mergedCats,
+                habits: mergedHabs,
+                habitLogs: mergedLogs,
+              },
+              deletes: { categories: [], habits: [], habitLogs: [] },
+            });
+          } else {
+            await leanCloudSyncService.fullSyncUp({
+              categories: mergedCats,
+              habits: mergedHabs,
+              habitLogs: mergedLogs,
+            });
+          }
+
+          set({ lastSyncTime: Date.now(), isSyncing: false });
+        } catch (error: any) {
+          set({ syncError: error.message, isSyncing: false });
+          throw error;
+        }
+      },
+
+      // 云端修复：补齐缺失 id，去除重复
+      repairCloudData: async () => {
+        try {
+          set({ isSyncing: true, syncError: null });
+          await leanCloudSyncService.repairCloudData?.();
+          set({ isSyncing: false });
+        } catch (error: any) {
+          set({ syncError: error.message, isSyncing: false });
+          throw error;
+        }
+      },
+
       enableAutoSync: () => {
         const state = get();
-        if (!state.syncEnabled || !state.syncUserId || autoSyncUnsubscribe) {
+        if (!state.syncEnabled || autoSyncUnsubscribe) {
           return;
         }
+        if (!state.leanAuthenticated) return;
 
         // 监听网络状态变化
         const handleOnline = () => set({ isOnline: true });
@@ -470,19 +738,18 @@ export const useHabitStore = create<HabitStore>()(
         window.addEventListener("offline", handleOffline);
 
         // 订阅云端数据变化
-        autoSyncUnsubscribe = syncService.subscribeToChanges(
+        autoSyncUnsubscribe = leanCloudSyncService.subscribeToChanges(
           (categories) => {
-            // 更新本地数据库
             categories.forEach((category) => putData("categories", category));
-            set({ categories });
+            set({ categories: deduplicateById(categories) });
           },
           (habits) => {
             habits.forEach((habit) => putData("habits", habit));
-            set({ habits });
+            set({ habits: deduplicateById(habits) });
           },
           (habitLogs) => {
             habitLogs.forEach((log) => putData("habitLogs", log));
-            set({ habitLogs });
+            set({ habitLogs: deduplicateById(habitLogs) });
           }
         );
 
@@ -493,6 +760,70 @@ export const useHabitStore = create<HabitStore>()(
           window.removeEventListener("offline", handleOffline);
           originalUnsubscribe();
         };
+      },
+
+      // LeanCloud 认证：优先注册，若已存在则登录
+      leanRegisterOrLogin: async (email: string, password: string) => {
+        try {
+          set({ isSyncing: true, syncError: null });
+          try {
+            const info = await leanCloudSyncService.register?.(email, password);
+            if (!info) throw new Error("注册失败");
+            set({
+              leanAuthenticated: true,
+              leanEmail: info.email,
+              leanUserId: info.userId,
+            });
+          } catch (regErr: any) {
+            const code = regErr?.code as number | undefined;
+            if (code === 202 || code === 203) {
+              const info = await leanCloudSyncService.login(email, password);
+              set({
+                leanAuthenticated: true,
+                leanEmail: info.email,
+                leanUserId: info.userId,
+              });
+            } else {
+              throw regErr;
+            }
+          }
+          if (get().syncEnabled) {
+            get().enableAutoSync();
+          }
+        } catch (error: any) {
+          set({ syncError: error.message });
+          throw error;
+        } finally {
+          set({ isSyncing: false });
+        }
+      },
+
+      leanLogout: async () => {
+        // 关闭自动同步，清理订阅
+        get().disableAutoSync();
+        await leanCloudSyncService.logout();
+        set({ leanAuthenticated: false, leanEmail: "", leanUserId: "" });
+      },
+
+      clearRemoteAndLogout: async () => {
+        const state = get();
+        // 仅在启用同步时执行
+        try {
+          set({ isSyncing: true, syncError: null });
+          // 关自动同步
+          get().disableAutoSync();
+          await leanCloudSyncService.clearRemoteData();
+          await leanCloudSyncService.logout();
+          set({ leanAuthenticated: false, leanEmail: "", leanUserId: "" });
+          // 清空本地数据库
+          await clearAllData();
+          set({ categories: [], habits: [], habitLogs: [] });
+        } catch (error: any) {
+          set({ syncError: error.message });
+          throw error;
+        } finally {
+          set({ isSyncing: false });
+        }
       },
 
       disableAutoSync: () => {

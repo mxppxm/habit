@@ -9,6 +9,8 @@ interface KeyboardShortcut {
   handler: (event: KeyboardEvent) => void;
   enabled?: boolean;
   preventDefault?: boolean;
+  // 是否允许在输入框/文本域内触发（默认仅在有修饰键时才触发）
+  allowInInput?: boolean;
 }
 
 /**
@@ -51,11 +53,11 @@ export const useKeyboardShortcuts = (shortcuts: KeyboardShortcut[]) => {
         }
 
         if (keyMatch && modifierMatch) {
-          // 对于修饰键组合，即使在输入框中也应该触发
+          // 对于修饰键组合，或明确允许在输入框触发时，也可在输入元素中触发
           const isModifierCombo =
             shortcut.ctrlKey || shortcut.metaKey || shortcut.altKey;
 
-          if (!isInputElement || isModifierCombo) {
+          if (!isInputElement || isModifierCombo || shortcut.allowInInput) {
             if (shortcut.preventDefault !== false) {
               event.preventDefault();
             }

@@ -2,7 +2,10 @@
 
 ## 🌟 概述
 
-本项目现已支持多端同步功能，可以在不同设备间实时同步您的习惯追踪数据。同步基于 Firebase Firestore 实现，提供实时数据同步、离线支持和冲突解决。
+本项目现已支持多端同步功能，可以在不同设备间实时同步您的习惯追踪数据。同步支持两种方式：
+
+- Firebase Firestore（现有方案，使用“同步 ID”命名空间）
+- LeanCloud（新增方案，邮箱登录/注册 + LiveQuery 实时）
 
 ## 🚀 快速开始
 
@@ -31,7 +34,7 @@
 4. 输入应用昵称（如：`habit-tracker-web`）
 5. 复制显示的配置信息
 
-### 4. 配置环境变量
+### 4. 配置环境变量（Firebase）
 
 在项目根目录创建 `.env` 文件（参考 `.env.example`）：
 
@@ -44,7 +47,15 @@ VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
 VITE_FIREBASE_APP_ID=1:123456789:web:abcdef123456
 ```
 
-### 5. 安装依赖并启动
+### 5. 配置环境变量（LeanCloud）
+
+```env
+VITE_LEANCLOUD_APP_ID=your_app_id
+VITE_LEANCLOUD_APP_KEY=your_app_key
+VITE_LEANCLOUD_SERVER_URL=https://xxx.xxx.lc-cn-n1-shared.com
+```
+
+### 6. 安装依赖并启动
 
 ```bash
 npm install
@@ -58,8 +69,9 @@ npm run dev
 1. 打开应用，进入"设置"页面
 2. 在"多端同步"部分点击"同步设置"
 3. 开启"启用多端同步"开关
-4. 设置一个唯一的"同步 ID"（建议使用您的邮箱或其他唯一标识）
-5. 点击"保存"
+4. 选择“同步方式”：
+   - 选择 Firebase：设置一个唯一的“同步 ID”，点击“保存”
+   - 选择 LeanCloud：输入邮箱和密码，未注册会自动注册后登录
 
 ### 首次同步
 
@@ -70,9 +82,10 @@ npm run dev
 
 **在其他设备上：**
 
-1. 使用相同的同步 ID
-2. 点击"从云端下载"按钮
-3. 等待下载完成
+1. 若选择 Firebase：使用相同的同步 ID
+1. 若选择 LeanCloud：在其他设备同样使用邮箱和密码登录
+1. 点击"从云端下载"按钮
+1. 等待下载完成
 
 ### 自动同步
 
@@ -120,6 +133,16 @@ service cloud.firestore {
 - 系统会自动处理大部分冲突
 - 冲突时以最后修改的数据为准
 - 如需恢复特定版本，可以使用导出/导入功能
+
+## 🧭 LeanCloud 控制台准备
+
+1. 新建应用，记录 AppID、AppKey、Server URL
+2. 启用 LiveQuery 服务
+3. 配置 Web 安全域名（包含你的站点域名/本地调试域名）
+4. 在「数据存储」创建 Class：
+   - Category：id(String, unique)、name(String)、lastModified(Number)
+   - Habit：id(String)、categoryId(String)、name(String)、reminderTime(String, 可空)、lastModified(Number)
+   - HabitLog：id(String)、habitId(String)、timestamp(Number)、note(String, 可空)、isMakeup(Boolean, 可选)、originalDate(Number, 可选)、lastModified(Number)
 
 ### 配额限制
 

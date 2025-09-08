@@ -28,7 +28,7 @@ export const EnhancedDialog: React.FC<EnhancedDialogProps> = ({
   confirmDisabled = false,
   children,
   className = "fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white rounded-2xl p-6 sm:p-8 w-full max-w-sm sm:max-w-md mx-4 shadow-2xl z-50",
-  confirmShortcut = { key: "Enter", ctrlKey: true, metaKey: true },
+  confirmShortcut = { key: "Enter" },
 }) => {
   // 对话框快捷键
   useKeyboardShortcuts([
@@ -47,6 +47,7 @@ export const EnhancedDialog: React.FC<EnhancedDialogProps> = ({
       metaKey: confirmShortcut.metaKey,
       shiftKey: confirmShortcut.shiftKey,
       altKey: confirmShortcut.altKey,
+      allowInInput: true,
       handler: (e) => {
         if (open && onConfirm && !confirmDisabled) {
           e.preventDefault();

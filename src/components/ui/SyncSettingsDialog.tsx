@@ -17,31 +17,93 @@ interface SyncSettingsDialogProps {
   onOpenChange: (open: boolean) => void;
 }
 
+interface LeanAuthFormProps {
+  onAuth: (email: string, password: string) => Promise<void>;
+  isBusy: boolean;
+}
+
+const LeanAuthForm: React.FC<LeanAuthFormProps> = ({ onAuth, isBusy }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+
+  const handleSubmit = async () => {
+    setError("");
+    if (!email.trim() || !password) {
+      setError("请输入邮箱和密码");
+      return;
+    }
+    try {
+      await onAuth(email.trim(), password);
+      // 成功后立刻清空密码，避免在内存中驻留
+      setPassword("");
+    } catch (e: any) {
+      setError(e?.message || "登录失败");
+    }
+  };
+
+  return (
+    <div className="space-y-3">
+      <label className="block text-sm font-medium">
+        LeanCloud 登录（未注册将自动注册）
+      </label>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="邮箱"
+        autoComplete="username"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      <input
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+        placeholder="密码"
+        autoComplete="current-password"
+        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+      {error && <div className="text-xs text-red-600">{error}</div>}
+      <button
+        onClick={handleSubmit}
+        disabled={isBusy}
+        className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        {isBusy ? "处理中..." : "登录 / 注册"}
+      </button>
+    </div>
+  );
+};
+
 export const SyncSettingsDialog: React.FC<SyncSettingsDialogProps> = ({
   open,
   onOpenChange,
 }) => {
   const {
     syncEnabled,
-    syncUserId,
     lastSyncTime,
     isSyncing,
     syncError,
     isOnline,
     setSyncEnabled,
-    setSyncUserId,
     syncToCloud,
     syncFromCloud,
+    leanAuthenticated,
+    leanEmail,
+    leanRegisterOrLogin,
+    leanLogout,
+    clearRemoteAndLogout,
+    checkSyncOnboarding,
+    mergeCloudAndLocal,
+    repairCloudData,
   } = useHabitStore();
 
-  const [localUserId, setLocalUserId] = useState(syncUserId);
+  // Firebase 已移除，保留变量兼容但不使用
+  const [_localUserId, _setLocalUserId] = useState("");
   const [showAdvanced, setShowAdvanced] = useState(false);
 
-  const handleSaveUserId = () => {
-    if (localUserId.trim()) {
-      setSyncUserId(localUserId.trim());
-    }
-  };
+  // 同步ID相关逻辑已移除
+  // 同步ID逻辑已移除
 
   const handleSyncUp = async () => {
     try {
@@ -116,35 +178,78 @@ export const SyncSettingsDialog: React.FC<SyncSettingsDialogProps> = ({
 
             {syncEnabled && (
               <>
-                {/* 用户ID设置 */}
-                <div className="space-y-3">
-                  <label className="block text-sm font-medium">
-                    同步ID (用于识别您的设备)
-                  </label>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={localUserId}
-                      onChange={(e) => setLocalUserId(e.target.value)}
-                      placeholder="输入您的同步ID"
-                      className="flex-1 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    />
-                    <button
-                      onClick={handleSaveUserId}
-                      disabled={
-                        !localUserId.trim() || localUserId === syncUserId
-                      }
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      保存
-                    </button>
-                  </div>
-                  <p className="text-xs text-gray-500">
-                    在其他设备上使用相同的同步ID即可实现数据同步
-                  </p>
-                </div>
+                {/* 仅 LeanCloud 模式 */}
 
-                {syncUserId && (
+                {/* LeanCloud 登录/注册 */}
+                {
+                  <div className="space-y-3">
+                    {!leanAuthenticated ? (
+                      <LeanAuthForm
+                        onAuth={leanRegisterOrLogin}
+                        isBusy={isSyncing}
+                      />
+                    ) : (
+                      <div className="p-3 rounded-lg bg-gray-50">
+                        <div className="text-sm text-gray-700 mb-2">
+                          已登录：{leanEmail}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            onClick={handleSyncUp}
+                            disabled={isSyncing || !isOnline}
+                            className="px-3 py-1 text-sm rounded-md bg-green-600 text-white hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            同步本地→云端
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                const r = await checkSyncOnboarding();
+                                if (r.remoteEmpty && r.hasLocal) {
+                                  await handleSyncUp();
+                                } else if (!r.remoteEmpty && !r.hasLocal) {
+                                  await handleSyncDown();
+                                } else if (!r.remoteEmpty && r.hasLocal) {
+                                  await mergeCloudAndLocal();
+                                }
+                              } catch {
+                                /* 已在 store 处理 */
+                              }
+                            }}
+                            disabled={isSyncing || !isOnline}
+                            className="px-3 py-1 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            首次同步引导
+                          </button>
+                          <button
+                            onClick={leanLogout}
+                            className="px-3 py-1 text-sm rounded-md border border-gray-300 hover:bg-gray-100"
+                          >
+                            退出登录
+                          </button>
+                          <button
+                            onClick={clearRemoteAndLogout}
+                            className="px-3 py-1 text-sm rounded-md border border-red-300 text-red-600 hover:bg-red-50"
+                          >
+                            注销并清空云端
+                          </button>
+                          <button
+                            onClick={async () => {
+                              try {
+                                await repairCloudData();
+                              } catch {}
+                            }}
+                            className="px-3 py-1 text-sm rounded-md border border-purple-300 text-purple-700 hover:bg-purple-50"
+                          >
+                            修复云端数据
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                }
+
+                {leanAuthenticated && (
                   <>
                     {/* 同步状态 */}
                     <div className="p-3 rounded-lg bg-gray-50">
@@ -211,7 +316,8 @@ export const SyncSettingsDialog: React.FC<SyncSettingsDialogProps> = ({
                         <div className="mt-3 p-3 border rounded-lg space-y-2">
                           <div className="text-xs text-gray-600">
                             <p>
-                              <strong>同步ID:</strong> {syncUserId}
+                              <strong>LeanCloud 用户:</strong>{" "}
+                              {leanEmail || "未登录"}
                             </p>
                             <p>
                               <strong>自动同步:</strong>{" "}
@@ -229,21 +335,6 @@ export const SyncSettingsDialog: React.FC<SyncSettingsDialogProps> = ({
                 )}
               </>
             )}
-
-            {/* 使用说明 */}
-            <div className="p-3 rounded-lg bg-blue-50 border-l-4 border-blue-400">
-              <h4 className="text-sm font-medium text-blue-800 mb-1">
-                使用说明
-              </h4>
-              <ul className="text-xs text-blue-700 space-y-1">
-                <li>• 设置同步ID后，在其他设备使用相同ID即可同步数据</li>
-                <li>
-                  • 首次同步建议先"上传到云端"，然后在其他设备"从云端下载"
-                </li>
-                <li>• 启用自动同步后，数据会实时同步到所有设备</li>
-                <li>• 网络断开时会自动暂停同步，恢复后会继续</li>
-              </ul>
-            </div>
           </div>
         </Dialog.Content>
       </Dialog.Portal>
